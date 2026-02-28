@@ -86,6 +86,9 @@ function BinanceChart({ data }) {
   const canvasRef = useRef(null)
   const [hovered, setHovered] = useState(null)
   const [crosshair, setCrosshair] = useState(null)
+  const isMobile = window.innerWidth < 640
+const CHART_H = isMobile ? 220 : 300
+const VOL_H = isMobile ? 50 : 65
   const CHART_H = 280, VOL_H = 60
   const PAD = { top:38, right:72, bottom:18, left:8 }
   const MA_COLORS = { ma7:"#f0b90b", ma25:"#e8465a", ma99:"#a855f7" }
@@ -580,6 +583,41 @@ export default function App() {
           .desktop-table{display:none;}
           .card{border-radius:16px;}
           .logo{font-size:10px;letter-spacing:.22em;}
+          .glass-strong div[style*="padding: 14px 18px 0"]{
+  padding:10px 10px 0 !important;
+  overflow-x:auto;
+}
+button[style*="7px 14px"]{
+  padding:6px 9px !important;
+  font-size:11px !important;
+  white-space:nowrap;
+}
+
+/* Chart canvas */
+canvas{max-width:100% !important;}
+
+/* Price header */
+.glass-strong div[style*="padding: 14px 18px 4px"]{
+  padding:10px 12px 4px !important;
+  flex-wrap:wrap;
+  gap:6px;
+}
+
+/* Interval buttons row */
+div[style*="marginLeft: auto"][style*="gap: 3px"]{
+  flex-wrap:wrap;
+}
+
+/* Trending table — скрыть Volume колонку */
+div[style*="1.4fr 1.2fr 1fr 1.5fr"]{
+  grid-template-columns:1.5fr 1.1fr 0.9fr !important;
+}
+a[style*="1.4fr 1.2fr 1fr 1.5fr"]{
+  grid-template-columns:1.5fr 1.1fr 0.9fr !important;
+}
+a[style*="1.4fr 1.2fr 1fr 1.5fr"] span:last-child{
+  display:none !important;
+}
         }
         /* Desktop — hide cards, show table */
         @media(min-width:640px){

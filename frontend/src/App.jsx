@@ -524,7 +524,12 @@ export default function App() {
   const [countdown, setCountdown] = useState(30)
   const [error, setError] = useState(null)
   const prevOffersRef = useRef([])
-
+useEffect(() => {
+  if (window.Telegram?.WebApp) {
+    window.Telegram.WebApp.ready()
+    window.Telegram.WebApp.expand()
+  }
+}, [])
   const loadOffers = useCallback((f, c, s, ex, sr) => {
     setError(null)
     fetch(`${API}/p2p?fiat=${f}&crypto=${c}&side=${s}&exchange=${ex}&sort=${sr}`)

@@ -86,9 +86,6 @@ function BinanceChart({ data }) {
   const canvasRef = useRef(null)
   const [hovered, setHovered] = useState(null)
   const [crosshair, setCrosshair] = useState(null)
-  const isMobile = window.innerWidth < 640
-const CHART_H = isMobile ? 220 : 300
-const VOL_H = isMobile ? 50 : 65
   const CHART_H = 280, VOL_H = 60
   const PAD = { top:38, right:72, bottom:18, left:8 }
   const MA_COLORS = { ma7:"#f0b90b", ma25:"#e8465a", ma99:"#a855f7" }

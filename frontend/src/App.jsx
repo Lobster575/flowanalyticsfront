@@ -75,6 +75,7 @@ import { useState, useEffect, useRef, useCallback } from "react"
   // ─── Chart ────────────────────────────────────────────────────────────────────
   function BinanceChart({data}){
     const canvasRef=useRef(null)
+    const wrapRef=useRef(null)
     const [hovered,setHovered]=useState(null)
     const [crosshair,setCrosshair]=useState(null)
     const isMobile=window.innerWidth<640
@@ -86,13 +87,12 @@ import { useState, useEffect, useRef, useCallback } from "react"
     useEffect(()=>{
       if(!data.length)return
       const canvas=canvasRef.current;if(!canvas)return
-      canvas.style.width='100%'
-      canvas.style.display='block'
-      const W=Math.floor(canvas.parentElement?.clientWidth||canvas.clientWidth||300)
-      canvas.width=W*window.devicePixelRatio
+      const wrap=wrapRef.current;if(!wrap)return
+      const W=wrap.getBoundingClientRect().width||wrap.clientWidth||300
+      canvas.width=Math.floor(W)*window.devicePixelRatio
       canvas.height=(CHART_H+VOL_H)*window.devicePixelRatio
-      canvas.style.width=W+'px'
-      canvas.style.height=(CHART_H+VOL_H)+'px' 
+      canvas.style.width=Math.floor(W)+'px'
+      canvas.style.height=(CHART_H+VOL_H)+'px'
       const ctx=canvas.getContext("2d");ctx.scale(window.devicePixelRatio,window.devicePixelRatio)
       const cW=W-PAD.left-PAD.right,cH=CHART_H-PAD.top-PAD.bottom
       const prices=data.flatMap(d=>[d.high,d.low])
@@ -150,17 +150,15 @@ import { useState, useEffect, useRef, useCallback } from "react"
       }
     },[data,crosshair,hovered])
 
-    // Redraw on resize
-  useEffect(()=>{
-    const canvas=canvasRef.current;if(!canvas)return
-    const ro=new ResizeObserver(()=>{
-      if(data.length){canvas.style.width='100%';setHovered(null)}
-    })
-    ro.observe(canvas.parentElement||canvas)
-    return()=>ro.disconnect()
-  },[data])
+    // Redraw when container resizes
+    useEffect(()=>{
+      const wrap=wrapRef.current;if(!wrap)return
+      const ro=new ResizeObserver(()=>{ setHovered(h=>h) }) // trigger redraw
+      ro.observe(wrap)
+      return()=>ro.disconnect()
+    },[])
 
-  const handleMouseMove=useCallback((e)=>{
+    const handleMouseMove=useCallback((e)=>{
       const canvas=canvasRef.current;if(!canvas||!data.length)return
       const rect=canvas.getBoundingClientRect(),mx=e.clientX-rect.left,my=e.clientY-rect.top
       const W=canvas.offsetWidth,cW=W-PAD.left-PAD.right
@@ -170,7 +168,7 @@ import { useState, useEffect, useRef, useCallback } from "react"
 
     const hd=hovered!==null?data[hovered]:data[data.length-1]
     return(
-      <div style={{position:"relative"}}>
+      <div ref={wrapRef} style={{position:"relative",width:"100%",overflow:"hidden",boxSizing:"border-box"}}>
         {hd&&(
           <div style={{position:"absolute",top:18,left:PAD.left+4,display:"flex",gap:10,zIndex:2,pointerEvents:"none",flexWrap:"wrap"}}>
             {[["O",hd.open],["H",hd.high],["L",hd.low],["C",hd.close]].map(([k,v])=>(
@@ -185,7 +183,7 @@ import { useState, useEffect, useRef, useCallback } from "react"
             </span>
           </div>
         )}
-        <canvas ref={canvasRef} style={{width:"100%",height:`${CHART_H+VOL_H}px`,cursor:"crosshair",display:"block"}}
+        <canvas ref={canvasRef} style={{display:"block",cursor:"crosshair"}}
           onMouseMove={handleMouseMove} onMouseLeave={()=>{setHovered(null);setCrosshair(null)}}/>
       </div>
     )
@@ -573,7 +571,7 @@ import { useState, useEffect, useRef, useCallback } from "react"
           *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
                     html,body{
             max-width:100vw;
-            canvas{max-width:100% !important;display:block !important;box-sizing:border-box;}
+            canvas { max-width: 100% !important; display: block; }
             }
           body{background:#040a18;min-height:100vh;font-family:'Syne',sans-serif;display:flex;justify-content:center;}
           body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;

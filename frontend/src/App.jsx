@@ -1,4 +1,4 @@
-  import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 
   const FIATS = ["PLN","EUR","USD","GBP","CZK","HUF","CAD","NGN","ILS","JPY"]
   const CRYPTOS = ["USDT","BTC","ETH","USDC"]
@@ -86,11 +86,13 @@
     useEffect(()=>{
       if(!data.length)return
       const canvas=canvasRef.current;if(!canvas)return
-      const W = canvas.parentElement?.offsetWidth || canvas.offsetWidth
-      canvas.style.maxWidth = "100%"
+      canvas.style.width='100%'
+      canvas.style.display='block'
+      const W=Math.floor(canvas.parentElement?.clientWidth||canvas.clientWidth||300)
       canvas.width=W*window.devicePixelRatio
       canvas.height=(CHART_H+VOL_H)*window.devicePixelRatio
-      canvas.style.height=`${CHART_H+VOL_H}px`
+      canvas.style.width=W+'px'
+      canvas.style.height=(CHART_H+VOL_H)+'px' 
       const ctx=canvas.getContext("2d");ctx.scale(window.devicePixelRatio,window.devicePixelRatio)
       const cW=W-PAD.left-PAD.right,cH=CHART_H-PAD.top-PAD.bottom
       const prices=data.flatMap(d=>[d.high,d.low])
@@ -148,7 +150,17 @@
       }
     },[data,crosshair,hovered])
 
-    const handleMouseMove=useCallback((e)=>{
+    // Redraw on resize
+  useEffect(()=>{
+    const canvas=canvasRef.current;if(!canvas)return
+    const ro=new ResizeObserver(()=>{
+      if(data.length){canvas.style.width='100%';setHovered(null)}
+    })
+    ro.observe(canvas.parentElement||canvas)
+    return()=>ro.disconnect()
+  },[data])
+
+  const handleMouseMove=useCallback((e)=>{
       const canvas=canvasRef.current;if(!canvas||!data.length)return
       const rect=canvas.getBoundingClientRect(),mx=e.clientX-rect.left,my=e.clientY-rect.top
       const W=canvas.offsetWidth,cW=W-PAD.left-PAD.right
@@ -561,7 +573,7 @@
           *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
                     html,body{
             max-width:100vw;
-            canvas { max-width: 100% !important; display: block; }
+            canvas{max-width:100% !important;display:block !important;box-sizing:border-box;}
             }
           body{background:#040a18;min-height:100vh;font-family:'Syne',sans-serif;display:flex;justify-content:center;}
           body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;

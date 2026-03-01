@@ -74,32 +74,47 @@ import { useState, useEffect, useRef, useCallback } from "react"
 
   // ─── Chart ────────────────────────────────────────────────────────────────────
   function BinanceChart({data}){
-    const canvasRef=useRef(null)
     const wrapRef=useRef(null)
+    const canvasRef=useRef(null)
+    const [size,setSize]=useState({w:0,h:0})
     const [hovered,setHovered]=useState(null)
     const [crosshair,setCrosshair]=useState(null)
     const isMobile=window.innerWidth<640
     const CHART_H=isMobile?220:300
     const VOL_H=isMobile?50:65
+    const TOTAL_H=CHART_H+VOL_H
     const PAD={top:38,right:isMobile?54:78,bottom:20,left:4}
     const MA={ma7:"#f0b90b",ma25:"#e8465a",ma99:"#a855f7"}
 
+    // Step 1: measure wrapper width with ResizeObserver
     useEffect(()=>{
-      if(!data.length)return
-      const canvas=canvasRef.current;if(!canvas)return
       const wrap=wrapRef.current;if(!wrap)return
-      const W=wrap.getBoundingClientRect().width||wrap.clientWidth||300
-      canvas.width=Math.floor(W)*window.devicePixelRatio
-      canvas.height=(CHART_H+VOL_H)*window.devicePixelRatio
-      canvas.style.width=Math.floor(W)+'px'
-      canvas.style.height=(CHART_H+VOL_H)+'px'
-      const ctx=canvas.getContext("2d");ctx.scale(window.devicePixelRatio,window.devicePixelRatio)
+      const ro=new ResizeObserver(entries=>{
+        const w=Math.floor(entries[0].contentRect.width)
+        if(w>0) setSize({w,h:TOTAL_H})
+      })
+      ro.observe(wrap)
+      // initial measure
+      const w=Math.floor(wrap.getBoundingClientRect().width)
+      if(w>0) setSize({w,h:TOTAL_H})
+      return()=>ro.disconnect()
+    },[TOTAL_H])
+
+    // Step 2: draw when size or data changes
+    useEffect(()=>{
+      if(!data.length||!size.w)return
+      const canvas=canvasRef.current;if(!canvas)return
+      const W=size.w, dpr=window.devicePixelRatio||1
+      // Set exact pixel dimensions - never use CSS % on canvas
+      canvas.width=W*dpr
+      canvas.height=TOTAL_H*dpr
+      const ctx=canvas.getContext("2d");ctx.scale(dpr,dpr)
       const cW=W-PAD.left-PAD.right,cH=CHART_H-PAD.top-PAD.bottom
       const prices=data.flatMap(d=>[d.high,d.low])
       const minP=Math.min(...prices),maxP=Math.max(...prices),pR=maxP-minP||1
       const toY=p=>PAD.top+cH-((p-minP)/pR)*cH
       const maxV=Math.max(...data.map(d=>d.volume))
-      const toVY=v=>CHART_H+VOL_H-4-(v/maxV)*(VOL_H-10)
+      const toVY=v=>TOTAL_H-4-(v/maxV)*(VOL_H-10)
       const bW=Math.max(1,cW/data.length-1)
       const toX=i=>PAD.left+(i/(data.length-1))*cW
       ctx.strokeStyle="rgba(50,90,180,0.1)";ctx.lineWidth=1
@@ -132,13 +147,13 @@ import { useState, useEffect, useRef, useCallback } from "react"
       data.forEach((d,i)=>{
         const x=toX(i),hw=Math.max(.5,bW/2),vy=toVY(d.volume)
         ctx.fillStyle=d.close>=d.open?"rgba(38,166,154,0.3)":"rgba(239,83,80,0.25)"
-        ctx.fillRect(x-hw,vy,bW,CHART_H+VOL_H-4-vy)
+        ctx.fillRect(x-hw,vy,bW,TOTAL_H-4-vy)
       })
       ctx.strokeStyle="rgba(50,90,180,0.08)";ctx.lineWidth=1
       ctx.beginPath();ctx.moveTo(PAD.left,CHART_H);ctx.lineTo(W-PAD.right,CHART_H);ctx.stroke()
       ctx.fillStyle="rgba(100,140,255,0.3)";ctx.font=`${isMobile?8:9}px DM Mono,monospace`;ctx.textAlign="center"
       const step=Math.ceil(data.length/(isMobile?5:8))
-      data.forEach((d,i)=>{if(i%step===0)ctx.fillText(new Date(d.time).toLocaleDateString([],{month:"short",day:"numeric"}),toX(i),CHART_H+VOL_H-2)})
+      data.forEach((d,i)=>{if(i%step===0)ctx.fillText(new Date(d.time).toLocaleDateString([],{month:"short",day:"numeric"}),toX(i),TOTAL_H-2)})
       if(!isMobile){
         let lx=PAD.left+4
         ;[["MA(7)","ma7"],["MA(25)","ma25"],["MA(99)","ma99"]].forEach(([label,k])=>{
@@ -148,28 +163,23 @@ import { useState, useEffect, useRef, useCallback } from "react"
           ctx.fillText(txt,lx,14);lx+=ctx.measureText(txt).width+14
         })
       }
-    },[data,crosshair,hovered])
-
-    // Redraw when container resizes
-    useEffect(()=>{
-      const wrap=wrapRef.current;if(!wrap)return
-      const ro=new ResizeObserver(()=>{ setHovered(h=>h) }) // trigger redraw
-      ro.observe(wrap)
-      return()=>ro.disconnect()
-    },[])
+    },[data,size,crosshair,hovered])
 
     const handleMouseMove=useCallback((e)=>{
-      const canvas=canvasRef.current;if(!canvas||!data.length)return
-      const rect=canvas.getBoundingClientRect(),mx=e.clientX-rect.left,my=e.clientY-rect.top
-      const W=canvas.offsetWidth,cW=W-PAD.left-PAD.right
+      const canvas=canvasRef.current;if(!canvas||!data.length||!size.w)return
+      const rect=canvas.getBoundingClientRect()
+      const scaleX=size.w/rect.width
+      const mx=(e.clientX-rect.left)*scaleX,my=(e.clientY-rect.top)*scaleX
+      const cW=size.w-PAD.left-PAD.right
       const idx=Math.round(((mx-PAD.left)/cW)*(data.length-1))
       if(idx>=0&&idx<data.length){setHovered(idx);setCrosshair({x:mx,y:my})}
-    },[data])
+    },[data,size])
 
     const hd=hovered!==null?data[hovered]:data[data.length-1]
     return(
-      <div ref={wrapRef} style={{position:"relative",width:"100%",overflow:"hidden",boxSizing:"border-box"}}>
-        {hd&&(
+      // wrapper: full width, overflow hidden, exact height
+      <div ref={wrapRef} style={{width:"100%",overflow:"hidden",position:"relative",height:size.w?TOTAL_H:0}}>
+        {hd&&size.w>0&&(
           <div style={{position:"absolute",top:18,left:PAD.left+4,display:"flex",gap:10,zIndex:2,pointerEvents:"none",flexWrap:"wrap"}}>
             {[["O",hd.open],["H",hd.high],["L",hd.low],["C",hd.close]].map(([k,v])=>(
               <span key={k} style={{fontFamily:"DM Mono,monospace",fontSize:10}}>
@@ -183,8 +193,11 @@ import { useState, useEffect, useRef, useCallback } from "react"
             </span>
           </div>
         )}
-        <canvas ref={canvasRef} style={{display:"block",cursor:"crosshair"}}
-          onMouseMove={handleMouseMove} onMouseLeave={()=>{setHovered(null);setCrosshair(null)}}/>
+        {/* canvas: exact pixel size via JS, NO CSS width/height % */}
+        <canvas ref={canvasRef}
+          style={{display:"block",cursor:"crosshair",width:size.w||0,height:size.w?TOTAL_H:0}}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={()=>{setHovered(null);setCrosshair(null)}}/>
       </div>
     )
   }

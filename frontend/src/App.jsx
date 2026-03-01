@@ -230,7 +230,7 @@ function LiveDot({lastUpdated}){
 function SpreadBanner(){
   const [spread,setSpread]=useState(null)
   useEffect(()=>{
-    const load=()=>fetch("http://localhost:8000/p2p/spread").then(r=>r.json()).then(d=>setSpread(d.spread)).catch(()=>{})
+    const load=()=>fetch("https://flowanalytics-production.up.railway.app/p2p/spread").then(r=>r.json()).then(d=>setSpread(d.spread)).catch(()=>{})
     load();const iv=setInterval(load,30000);return()=>clearInterval(iv)
   },[])
   if(!spread)return null
@@ -389,12 +389,12 @@ function MarketMode(){
 
   useEffect(()=>{
     setLoadingChart(true)
-    fetch(`http://localhost:8000/market/chart?symbol=${symbol}&interval=${interval}`)
+    fetch(`https://flowanalytics-production.up.railway.app/market/chart?symbol=${symbol}&interval=${interval}`)
       .then(r=>r.json()).then(d=>{setChartData(d.data||[]);setLoadingChart(false)}).catch(()=>setLoadingChart(false))
   },[symbol,interval])
   useEffect(()=>{
     setLoadingTrending(true)
-    fetch("http://localhost:8000/market/trending")
+    fetch("https://flowanalytics-production.up.railway.app/market/trending")
       .then(r=>r.json()).then(d=>{setTrending(d.data||[]);setLoadingTrending(false)}).catch(()=>setLoadingTrending(false))
   },[])
 
@@ -522,7 +522,7 @@ export default function App(){
 
   const loadOffers=useCallback((f,c,s,ex,sr,mr)=>{
     setError(null)
-    fetch(`http://localhost:8000/p2p?fiat=${f}&crypto=${c}&side=${s}&exchange=${ex}&sort=${sr}&min_rate=${mr}`)
+    fetch(`https://flowanalytics-production.up.railway.app/p2p?fiat=${f}&crypto=${c}&side=${s}&exchange=${ex}&sort=${sr}&min_rate=${mr}`)
       .then(r=>r.json())
       .then(d=>{
         const newOffers=d.offers||[]

@@ -254,19 +254,49 @@ import { useState, useEffect, useRef, useCallback } from "react"
   function SpreadBanner(){
     const [spread,setSpread]=useState(null)
     useEffect(()=>{
-      const load=()=>fetch("https://flowanalytics-production.up.railway.app/p2p/spread").then(r=>r.json()).then(d=>setSpread(d.spread)).catch(()=>{})
+      const load=()=>fetch("https://flowanalytics-production.up.railway.app/p2p/spread")
+        .then(r=>r.json())
+        .then(d=>{ if(d.spread) setSpread(d.spread) })
+        .catch(()=>{})
       load();const iv=setInterval(load,30000);return()=>clearInterval(iv)
     },[])
     if(!spread)return null
+    const buyUrl  = spread.buy_url  || null
+    const sellUrl = spread.sell_url || null
     return(
-      <div style={{marginBottom:13,padding:"10px 16px",borderRadius:12,background:"rgba(38,166,154,0.07)",border:"1px solid rgba(38,166,154,0.18)",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
-        <span style={{fontSize:9,letterSpacing:"0.15em",textTransform:"uppercase",color:"rgba(38,166,154,0.55)",fontFamily:"DM Mono,monospace",flexShrink:0}}>Best Spread</span>
-        <span style={{fontFamily:"DM Mono,monospace",fontSize:12,color:"rgba(180,220,255,0.65)"}}>
-          BUY <span style={{color:"#c8e0ff"}}>{spread.fiat}</span> <span style={{color:"#26a69a"}}>{spread.buy_price.toFixed(3)}</span>
-          <span style={{color:"rgba(100,150,255,0.3)",margin:"0 6px"}}>→</span>
-          SELL <span style={{color:"#c8e0ff"}}>{spread.fiat}</span> <span style={{color:"#26a69a"}}>{spread.sell_price.toFixed(3)}</span>
-        </span>
-        <span style={{marginLeft:"auto",fontFamily:"DM Mono,monospace",fontSize:13,fontWeight:700,color:"#3dffa0"}}>+{spread.spread_pct}%</span>
+      <div style={{padding:"12px 16px",borderBottom:"1px solid rgba(38,166,154,0.15)",background:"rgba(38,166,154,0.06)"}}>
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:7}}>
+          <span style={{fontSize:8,letterSpacing:"0.18em",textTransform:"uppercase",color:"rgba(38,166,154,0.6)",fontFamily:"DM Mono,monospace"}}>⚡ Best Spread</span>
+          <span style={{marginLeft:"auto",fontFamily:"DM Mono,monospace",fontSize:14,fontWeight:800,color:"#3dffa0"}}>+{spread.spread_pct}%</span>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap",fontFamily:"DM Mono,monospace",fontSize:12}}>
+          {/* BUY side */}
+          <span style={{color:"rgba(140,180,255,0.5)"}}>BUY</span>
+          <span style={{color:"#c8e0ff",fontWeight:600}}>{spread.fiat}</span>
+          <span style={{color:"#26a69a",fontWeight:700}}>{spread.buy_price.toFixed(3)}</span>
+          <span style={{color:"rgba(100,150,255,0.35)",fontSize:9}}>via</span>
+          {buyUrl
+            ? <a href={buyUrl} target="_blank" rel="noreferrer"
+                style={{color:"#5ba8ff",textDecoration:"none",borderBottom:"1px dotted rgba(91,168,255,0.4)"}}>
+                {spread.buy_advertiser||spread.buy_exchange} ↗
+              </a>
+            : <span style={{color:"#5ba8ff"}}>{spread.buy_advertiser||spread.buy_exchange}</span>
+          }
+          {/* Arrow */}
+          <span style={{color:"rgba(38,166,154,0.5)",fontSize:16,margin:"0 2px"}}>→</span>
+          {/* SELL side */}
+          <span style={{color:"rgba(140,180,255,0.5)"}}>SELL</span>
+          <span style={{color:"#c8e0ff",fontWeight:600}}>{spread.crypto}</span>
+          <span style={{color:"#26a69a",fontWeight:700}}>{spread.sell_price.toFixed(3)}</span>
+          <span style={{color:"rgba(100,150,255,0.35)",fontSize:9}}>via</span>
+          {sellUrl
+            ? <a href={sellUrl} target="_blank" rel="noreferrer"
+                style={{color:"#5ba8ff",textDecoration:"none",borderBottom:"1px dotted rgba(91,168,255,0.4)"}}>
+                {spread.sell_advertiser||spread.sell_exchange} ↗
+              </a>
+            : <span style={{color:"#5ba8ff"}}>{spread.sell_advertiser||spread.sell_exchange}</span>
+          }
+        </div>
       </div>
     )
   }
@@ -746,7 +776,6 @@ import { useState, useEffect, useRef, useCallback } from "react"
               </div>
             </div>
 
-            <SpreadBanner/>
             {!loading&&offers.length>0&&<Calculator offers={offers} side={side} fiat={fiat} crypto={crypto}/>}
 
             {/* Loading / error state */}
@@ -762,6 +791,8 @@ import { useState, useEffect, useRef, useCallback } from "react"
               <>
                 {/* ── Desktop table ── */}
                 <div className="glass-strong desktop-table" style={{overflow:"hidden"}}>
+                  {/* Best spread row — top of table */}
+                  <SpreadBanner/>
                   <div className="table-header">
                     <span className="th">Price</span>
                     <span className="th">Min</span>
@@ -805,6 +836,9 @@ import { useState, useEffect, useRef, useCallback } from "react"
 
                 {/* ── Mobile cards ── */}
                 <div className="mobile-cards" style={{display:"none"}}>
+                  <div className="glass-strong" style={{overflow:"hidden",marginBottom:10}}>
+                    <SpreadBanner/>
+                  </div>
                   {offers.map((o,i)=>(
                     <OfferCard key={`${o.advertiser}-${i}`} o={o} i={i}
                       isBest={o.price===bestPrice} changed={changedRows[o.advertiser]} fiat={fiat}/>

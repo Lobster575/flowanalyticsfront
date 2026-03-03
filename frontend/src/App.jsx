@@ -304,10 +304,8 @@ import { useState, useEffect, useRef, useCallback } from "react"
   // ─── Calculator ───────────────────────────────────────────────────────────────
   function Calculator({offers,side,fiat:globalFiat,crypto:globalCrypto}){
     const [amount,setAmount]=useState("")
-    const [fromCur,setFromCur]=useState(side==="BUY"?globalFiat:globalCrypto)
-    const [toCur,setToCur]=useState(side==="BUY"?globalCrypto:globalFiat)
-    useEffect(()=>setFromCur(side==="BUY"?globalFiat:globalCrypto),[globalFiat,globalCrypto,side])
-    useEffect(()=>setToCur(side==="BUY"?globalCrypto:globalFiat),[globalFiat,globalCrypto,side])
+    const fromCur=side==="BUY"?globalFiat:globalCrypto
+    const toCur=side==="BUY"?globalCrypto:globalFiat
     const num=parseFloat(amount)||0
     const valid=num>0?offers.filter(o=>num>=o.min_amount&&num<=o.max_amount):offers
     const outOfRange=num>0&&valid.length===0
@@ -318,14 +316,6 @@ import { useState, useEffect, useRef, useCallback } from "react"
     }):null
     const effP=best?(side==="BUY"?best.price*(1+(best.commission||0)/100):best.price*(1-(best.commission||0)/100)):null
     const result=effP&&num?(side==="BUY"?num/effP:num*effP):null
-    const Sel=({value,options,onChange})=>(
-      <div style={{position:"relative"}}>
-        <select value={value} onChange={e=>onChange(e.target.value)} style={{appearance:"none",background:"rgba(4,10,28,0.9)",border:"1px solid rgba(80,130,255,0.2)",borderRadius:8,padding:"5px 22px 5px 9px",fontFamily:"DM Mono,monospace",fontSize:11,color:"#a8c8ff",cursor:"pointer",outline:"none"}}>
-          {options.map(o=><option key={o}>{o}</option>)}
-        </select>
-        <span style={{position:"absolute",right:6,top:"50%",transform:"translateY(-50%)",color:"rgba(80,130,255,0.4)",fontSize:9,pointerEvents:"none"}}>▾</span>
-      </div>
-    )
     return(
       <div className="glass-strong" style={{padding:"15px 16px",marginBottom:13}}>
         <div style={{fontSize:10,letterSpacing:"0.18em",textTransform:"uppercase",color:"rgba(120,170,255,0.45)",fontFamily:"DM Mono,monospace",marginBottom:11}}>Quick Calculator</div>
@@ -335,16 +325,18 @@ import { useState, useEffect, useRef, useCallback } from "react"
               style={{flex:1,background:"rgba(4,10,28,0.8)",border:"1px solid rgba(80,130,255,0.18)",borderRight:"none",borderRadius:"10px 0 0 10px",padding:"10px 8px",fontFamily:"DM Mono,monospace",fontSize:15,color:"#fff",outline:"none",minWidth:0}}
               onFocus={e=>e.target.style.borderColor="rgba(80,130,255,0.45)"}
               onBlur={e=>e.target.style.borderColor="rgba(80,130,255,0.18)"}/>
-            <div style={{background:"rgba(8,20,55,0.9)",border:"1px solid rgba(80,130,255,0.18)",borderLeft:"none",borderRadius:"0 10px 10px 0",padding:"0 8px",display:"flex",alignItems:"center"}}>
-              <Sel value={fromCur} options={side==="BUY"?FIATS:CRYPTOS} onChange={setFromCur}/>
+            <div style={{background:"rgba(8,20,55,0.9)",border:"1px solid rgba(80,130,255,0.18)",borderLeft:"none",borderRadius:"0 10px 10px 0",padding:"8px 12px",display:"flex",alignItems:"center",fontFamily:"DM Mono,monospace",fontSize:12,color:"rgba(150,190,255,0.7)",whiteSpace:"nowrap"}}>
+              {fromCur}
             </div>
           </div>
           <span style={{color:"rgba(100,150,255,0.4)",fontSize:16,flexShrink:0}}>→</span>
-          <div style={{flex:1,minWidth:120,background:"rgba(4,10,28,0.6)",border:`1px solid ${outOfRange?"rgba(239,83,80,0.3)":"rgba(80,130,255,0.1)"}`,borderRadius:10,padding:"10px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}}>
+          <div style={{flex:1,minWidth:120,background:"rgba(4,10,28,0.6)",border:`1px solid ${outOfRange?"rgba(239,83,80,0.3)":"rgba(80,130,255,0.1)"}`,borderRadius:10,padding:"10px 12px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}}>
             <span style={{fontFamily:"DM Mono,monospace",fontSize:16,fontWeight:600,color:outOfRange?"#ef5350":result?"#26a69a":"rgba(80,130,255,0.2)"}}>
               {result?result.toFixed(side==="BUY"?4:2):"—"}
             </span>
-            <Sel value={toCur} options={side==="BUY"?CRYPTOS:FIATS} onChange={setToCur}/>
+            <span style={{fontFamily:"DM Mono,monospace",fontSize:12,color:"rgba(150,190,255,0.5)",whiteSpace:"nowrap"}}>
+              {toCur}
+            </span>
           </div>
         </div>
         {outOfRange&&num>0&&(
@@ -738,13 +730,15 @@ import { useState, useEffect, useRef, useCallback } from "react"
             <div className="glass-strong controls">
               <div className="sel-wrap">
                 <select value={fiat} onChange={e=>setFiat(e.target.value)}>
-                  {FIATS.map(f=><option key={f}>{f}</option>)}
+                  <optgroup label="Fiat">{FIATS.map(f=><option key={f}>{f}</option>)}</optgroup>
+                  <optgroup label="Crypto">{CRYPTOS.map(c=><option key={c}>{c}</option>)}</optgroup>
                 </select>
               </div>
               <div className="divider"/>
               <div className="sel-wrap">
                 <select value={crypto} onChange={e=>setCrypto(e.target.value)}>
-                  {CRYPTOS.map(c=><option key={c}>{c}</option>)}
+                  <optgroup label="Crypto">{CRYPTOS.map(c=><option key={c}>{c}</option>)}</optgroup>
+                  <optgroup label="Fiat">{FIATS.map(f=><option key={f}>{f}</option>)}</optgroup>
                 </select>
               </div>
               <div className="divider"/>

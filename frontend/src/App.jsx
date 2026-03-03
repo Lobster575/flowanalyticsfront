@@ -642,7 +642,7 @@ import { useState, useEffect, useRef, useCallback } from "react"
           fontFamily:"DM Mono,monospace",fontSize:13,fontWeight:300,
           color:"rgba(120,170,255,0.5)",letterSpacing:"0.18em",
         }}>
-          // real-time p2p intelligence
+          // real-time p2p monitor by Lobster
         </div>
 
         {/* Loading bar */}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 
   const FIATS = ["PLN","EUR","USD","GBP","CZK","HUF","CAD","NGN","ILS","JPY"]
   const CRYPTOS = ["USDT","BTC","ETH","USDC"]
@@ -22,8 +22,10 @@ import { useState, useEffect, useRef, useCallback } from "react"
   const SORT_OPTIONS = [
     { id:"price",  label:"Price" },
     { id:"volume", label:"Volume" },
-    { id:"rate",   label:"Rating" },
+    { id:"rate",   label:"Completion" },
+    { id:"score",  label:"Score" },
   ]
+  const COMMON_PAYMENTS = ["BLIK","Revolut","SEPA","Wise","PayPal","Bank Transfer","WebMoney","Paysend","Western Union","Faster Payments"]
   const RATE_FILTERS = [
     { id:0,  label:"All" },
     { id:90, label:"90%+" },
@@ -699,7 +701,7 @@ import { useState, useEffect, useRef, useCallback } from "react"
           fontFamily:"DM Mono,monospace",fontSize:13,fontWeight:300,
           color:"rgba(120,170,255,0.5)",letterSpacing:"0.18em",
         }}>
-          // P2P monitor by Lobster
+          // real-time p2p intelligence
         </div>
 
         {/* Loading bar */}
@@ -755,16 +757,28 @@ import { useState, useEffect, useRef, useCallback } from "react"
     const [exchange,setExchange]=useState("bybit")
     const [sort,setSort]=useState("price")
     const [minRate,setMinRate]=useState(0)
+    const [paymentFilter,setPaymentFilter]=useState("")
+    const [liveMode,setLiveMode]=useState(true)
     const [lastUpdated,setLastUpdated]=useState(null)
-    const [countdown,setCountdown]=useState(30)
+    const [countdown,setCountdown]=useState(25)
     const [error,setError]=useState(null)
+    const [isPortrait,setIsPortrait]=useState(window.innerHeight>window.innerWidth&&window.innerWidth<640)
     const prevPricesRef=useRef({})
     const [changedRows,setChangedRows]=useState({})
     const isMobile=window.innerWidth<640
+    const TTL=25
 
-    const loadOffers=useCallback((f,c,s,ex,sr,mr)=>{
+    // Detect portrait mode
+    useEffect(()=>{
+      const check=()=>setIsPortrait(window.innerHeight>window.innerWidth&&window.innerWidth<640)
+      window.addEventListener("resize",check);window.addEventListener("orientationchange",check)
+      return()=>{window.removeEventListener("resize",check);window.removeEventListener("orientationchange",check)}
+    },[])
+
+    const loadOffers=useCallback((f,c,s,ex,sr,mr,pf)=>{
       setError(null)
-      fetch(`https://flowanalytics-production.up.railway.app/p2p?fiat=${f}&crypto=${c}&side=${s}&exchange=${ex}&sort=${sr}&min_rate=${mr}`)
+      const pmParam=pf?`&payment=${encodeURIComponent(pf)}`:""
+      fetch(`https://flowanalytics-production.up.railway.app/p2p?fiat=${f}&crypto=${c}&side=${s}&exchange=${ex}&sort=${sr}&min_rate=${mr}${pmParam}`)
         .then(r=>r.json())
         .then(d=>{
           const newOffers=d.offers||[]
@@ -779,7 +793,7 @@ import { useState, useEffect, useRef, useCallback } from "react"
           if(Object.keys(changed).length){setChangedRows(changed);setTimeout(()=>setChangedRows({}),2200)}
           setOffers(newOffers);setLoading(false)
           setLastUpdated(new Date().toLocaleTimeString("pl-PL",{hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}))
-          setCountdown(30)
+          setCountdown(TTL)
         })
         .catch(()=>{setError("Connection error");setLoading(false)})
     },[])
@@ -787,13 +801,36 @@ import { useState, useEffect, useRef, useCallback } from "react"
     useEffect(()=>{
       if(mode!=="p2p")return
       setLoading(true)
-      loadOffers(fiat,crypto,side,exchange,sort,minRate)
-      const iv=setInterval(()=>loadOffers(fiat,crypto,side,exchange,sort,minRate),30000)
-      const tick=setInterval(()=>setCountdown(c=>c>0?c-1:30),1000)
-      return()=>{clearInterval(iv);clearInterval(tick)}
-    },[fiat,crypto,side,exchange,sort,minRate,mode,loadOffers])
+      loadOffers(fiat,crypto,side,exchange,sort,minRate,paymentFilter)
+      if(!liveMode)return
+      const iv=setInterval(()=>{
+        if(!document.hidden) loadOffers(fiat,crypto,side,exchange,sort,minRate,paymentFilter)
+      },TTL*1000)
+      const tick=setInterval(()=>{
+        if(!document.hidden) setCountdown(c=>c>0?c-1:TTL)
+      },1000)
+      // pause/resume on tab visibility
+      const onVis=()=>{ if(!document.hidden){ loadOffers(fiat,crypto,side,exchange,sort,minRate,paymentFilter);setCountdown(TTL) } }
+      document.addEventListener("visibilitychange",onVis)
+      return()=>{clearInterval(iv);clearInterval(tick);document.removeEventListener("visibilitychange",onVis)}
+    },[fiat,crypto,side,exchange,sort,minRate,paymentFilter,liveMode,mode,loadOffers])
 
-    const bestPrice=offers.length?(side==="BUY"?Math.min(...offers.map(o=>o.price)):Math.max(...offers.map(o=>o.price))):null
+    // Available payment methods from current offers
+    const availablePayments=useMemo(()=>{
+      const set=new Set()
+      offers.forEach(o=>o.payment_methods?.forEach(pm=>set.add(pm)))
+      return ["", ...Array.from(set).sort()]
+    },[offers])
+
+    // Client-side score sort & payment filter
+    const displayOffers=useMemo(()=>{
+      let list=[...offers]
+      if(paymentFilter) list=list.filter(o=>o.payment_methods?.some(pm=>pm.toLowerCase().includes(paymentFilter.toLowerCase())))
+      if(sort==="score") list.sort((a,b)=>(b.rating_score||0)-(a.rating_score||0))
+      return list
+    },[offers,paymentFilter,sort])
+
+    const bestPrice=displayOffers.length?(side==="BUY"?Math.min(...displayOffers.map(o=>o.price)):Math.max(...displayOffers.map(o=>o.price))):null
 
     return(
       <>
@@ -915,7 +952,20 @@ import { useState, useEffect, useRef, useCallback } from "react"
             <button className={`mode-btn ${mode==="market"?"active":""}`} onClick={()=>setMode("market")}>Market</button>
           </div>
 
-          {mode==="market"?<MarketMode/>:(<>
+          {mode==="market"?(
+            isPortrait?(
+              <div style={{
+                display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+                minHeight:"60vh",gap:20,padding:32,textAlign:"center",
+              }}>
+                <div style={{fontSize:52,animation:"spinCW 3s linear infinite",display:"inline-block"}}>⟳</div>
+                <div style={{fontFamily:"Syne,sans-serif",fontSize:18,fontWeight:700,color:"#c8e0ff"}}>Rotate your phone</div>
+                <div style={{fontFamily:"DM Mono,monospace",fontSize:12,color:"rgba(120,170,255,0.45)",lineHeight:1.7}}>
+                  Market charts require<br/>landscape orientation
+                </div>
+              </div>
+            ):<MarketMode/>
+          ):(<>
             <div className="exchange-tabs">
               {EXCHANGES_CONFIG.map(ex=>(
                 <button key={ex.id} className={`ex-tab ${exchange===ex.id?"active":""}`} onClick={()=>setExchange(ex.id)}>
@@ -956,21 +1006,49 @@ import { useState, useEffect, useRef, useCallback } from "react"
                   <button key={r.id} className={`rf-btn ${minRate===r.id?"active":""}`} onClick={()=>setMinRate(r.id)}>{r.label}</button>
                 ))}
               </div>
+              <div className="divider"/>
+              {/* Payment filter */}
+              <div className="sel-wrap">
+                <select value={paymentFilter} onChange={e=>setPaymentFilter(e.target.value)}>
+                  <option value="">All payments</option>
+                  {availablePayments.filter(p=>p).map(pm=>(
+                    <option key={pm} value={pm}>{pm}</option>
+                  ))}
+                </select>
+              </div>
               <div className="meta">
+                {/* Live toggle */}
+                <button onClick={()=>setLiveMode(l=>!l)} style={{
+                  display:"flex",alignItems:"center",gap:5,
+                  padding:"4px 8px",borderRadius:8,border:"none",cursor:"pointer",
+                  background:liveMode?"rgba(38,166,154,0.12)":"rgba(60,80,150,0.12)",
+                  transition:"all .2s",
+                }}>
+                  <span style={{
+                    width:6,height:6,borderRadius:"50%",flexShrink:0,
+                    background:liveMode?"#26a69a":"rgba(120,150,255,0.3)",
+                    boxShadow:liveMode?"0 0 6px #26a69a":"none",
+                    animation:liveMode?"pulse 1.6s infinite":"none",
+                  }}/>
+                  <span style={{fontFamily:"DM Mono,monospace",fontSize:9,letterSpacing:"0.1em",
+                    color:liveMode?"#26a69a":"rgba(100,140,255,0.35)",fontWeight:600}}>
+                    {liveMode?"LIVE":"OFF"}
+                  </span>
+                </button>
                 <LiveDot lastUpdated={lastUpdated}/>
-                <div className="countdown">
+                {liveMode&&<div className="countdown">
                   <svg width="26" height="26" viewBox="0 0 32 32">
                     <circle className="countdown-track" cx="16" cy="16" r="14"/>
-                    <circle className="countdown-fill" cx="16" cy="16" r="14" style={{strokeDashoffset:88-(countdown/30)*88}}/>
+                    <circle className="countdown-fill" cx="16" cy="16" r="14" style={{strokeDashoffset:88-(countdown/TTL)*88}}/>
                   </svg>
-                </div>
+                </div>}
               </div>
             </div>
 
-            {!loading&&offers.length>0&&<Calculator offers={offers} side={side} fiat={fiat} crypto={crypto}/>}
+            {!loading&&displayOffers.length>0&&<Calculator offers={displayOffers} side={side} fiat={fiat} crypto={crypto}/>}
 
             {/* Loading / error state */}
-            {(loading&&offers.length===0)||error||offers.length===0?(
+            {(loading&&displayOffers.length===0)||error||displayOffers.length===0?(
               <div className="glass-strong" style={{overflow:"hidden"}}>
                 {loading&&offers.length===0
                   ?<div className="loading-state"><span className="pulse"/>fetching offers...</div>
@@ -991,7 +1069,7 @@ import { useState, useEffect, useRef, useCallback } from "react"
                     <span className="th">Fee</span>
                     <span className="th">Advertiser</span>
                   </div>
-                  {offers.map((o,i)=>{
+                  {displayOffers.map((o,i)=>{
                     const isBest=o.price===bestPrice
                     const changed=changedRows[o.advertiser]
                     return(
@@ -1009,10 +1087,20 @@ import { useState, useEffect, useRef, useCallback } from "react"
                         </div>
                         <div className="fee-cell">{o.commission===0?"0%":`${o.commission}%`}</div>
                         <div className="adv-wrap">
-                          {o.url
-                            ?<a className="adv-name" href={o.url} target="_blank" rel="noreferrer">{o.trusted&&<span style={{fontSize:11}}>⭐</span>}{o.advertiser}<span className="link-icon">↗</span></a>
-                            :<span className="adv-name">{o.trusted&&<span style={{fontSize:11}}>⭐</span>}{o.advertiser}</span>
-                          }
+                          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:6}}>
+                            {o.url
+                              ?<a className="adv-name" href={o.url} target="_blank" rel="noreferrer">{o.trusted&&<span style={{fontSize:11}}>⭐</span>}{o.advertiser}<span className="link-icon">↗</span></a>
+                              :<span className="adv-name">{o.trusted&&<span style={{fontSize:11}}>⭐</span>}{o.advertiser}</span>
+                            }
+                            {o.rating_score!=null&&(
+                              <span style={{fontFamily:"DM Mono,monospace",fontSize:9,padding:"1px 6px",borderRadius:6,
+                                background:o.rating_score>=7?"rgba(38,166,154,0.12)":o.rating_score>=4?"rgba(247,166,0,0.1)":"rgba(239,83,80,0.1)",
+                                color:o.rating_score>=7?"#26a69a":o.rating_score>=4?"#f7a600":"#ef5350",
+                                border:`1px solid ${o.rating_score>=7?"rgba(38,166,154,0.25)":o.rating_score>=4?"rgba(247,166,0,0.2)":"rgba(239,83,80,0.2)"}`,
+                                flexShrink:0,
+                              }}>★ {o.rating_score.toFixed(1)}</span>
+                            )}
+                          </div>
                           {o.payment_methods?.length>0&&(
                             <div className="payment-tags">
                               {o.payment_methods.slice(0,4).map((pm,j)=><span key={j} className="payment-tag">{pm}</span>)}
@@ -1030,7 +1118,7 @@ import { useState, useEffect, useRef, useCallback } from "react"
                   <div className="glass-strong" style={{overflow:"hidden",marginBottom:10}}>
                     <SpreadBanner/>
                   </div>
-                  {offers.map((o,i)=>(
+                  {displayOffers.map((o,i)=>(
                     <OfferCard key={`${o.advertiser}-${i}`} o={o} i={i}
                       isBest={o.price===bestPrice} changed={changedRows[o.advertiser]} fiat={fiat}/>
                   ))}

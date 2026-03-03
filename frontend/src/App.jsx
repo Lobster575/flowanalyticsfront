@@ -549,7 +549,138 @@ import { useState, useEffect, useRef, useCallback } from "react"
   }
 
   // ─── Main App ─────────────────────────────────────────────────────────────────
+  // ─── Intro Screen ─────────────────────────────────────────────────────────────
+  function IntroScreen({onDone}){
+    const [phase,setPhase]=useState(0)
+    // phase 0: fade in logo, 1: show tagline, 2: fade out
+    useEffect(()=>{
+      const t1=setTimeout(()=>setPhase(1),600)
+      const t2=setTimeout(()=>setPhase(2),2200)
+      const t3=setTimeout(()=>onDone(),3100)
+      return()=>{clearTimeout(t1);clearTimeout(t2);clearTimeout(t3)}
+    },[])
+    return(
+      <div style={{
+        position:"fixed",inset:0,zIndex:9999,
+        display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+        background:"#040a18",
+        opacity:phase===2?0:1,
+        transition:phase===2?"opacity 0.9s ease":"none",
+        pointerEvents:"none",
+      }}>
+        {/* Animated grid */}
+        <div style={{position:"absolute",inset:0,
+          backgroundImage:"linear-gradient(rgba(50,100,220,0.06) 1px,transparent 1px),linear-gradient(90deg,rgba(50,100,220,0.06) 1px,transparent 1px)",
+          backgroundSize:"46px 46px",
+          animation:"introGrid 3s ease forwards",
+        }}/>
+        {/* Orbs */}
+        <div style={{position:"absolute",width:600,height:600,borderRadius:"50%",
+          background:"radial-gradient(circle,rgba(15,55,155,0.35) 0%,transparent 70%)",
+          top:-150,left:-100,filter:"blur(80px)",
+          animation:"introOrb1 2.5s ease forwards",
+        }}/>
+        <div style={{position:"absolute",width:400,height:400,borderRadius:"50%",
+          background:"radial-gradient(circle,rgba(38,166,154,0.15) 0%,transparent 70%)",
+          bottom:-100,right:-50,filter:"blur(80px)",
+          animation:"introOrb2 2.5s ease forwards",
+        }}/>
+
+        {/* Logo mark */}
+        <div style={{
+          position:"relative",zIndex:1,
+          opacity:phase>=0?1:0,
+          transform:phase>=0?"translateY(0)":"translateY(20px)",
+          transition:"opacity 0.8s ease, transform 0.8s ease",
+          marginBottom:24,
+          display:"flex",alignItems:"center",justifyContent:"center",
+        }}>
+          <div style={{
+            width:64,height:64,borderRadius:16,
+            background:"rgba(8,16,42,0.9)",
+            border:"1.5px solid rgba(90,140,255,0.3)",
+            display:"flex",alignItems:"center",justifyContent:"center",
+            fontSize:28,
+            boxShadow:"0 0 40px rgba(80,130,255,0.15), inset 0 0 20px rgba(80,130,255,0.05)",
+            animation:"introPulseBox 2s ease infinite",
+          }}>⬡</div>
+        </div>
+
+        {/* Title */}
+        <div style={{
+          position:"relative",zIndex:1,
+          opacity:phase>=0?1:0,
+          transform:phase>=0?"translateY(0)":"translateY(20px)",
+          transition:"opacity 0.8s ease 0.15s, transform 0.8s ease 0.15s",
+          textAlign:"center",
+        }}>
+          <h1 style={{
+            fontFamily:"Syne,sans-serif",fontWeight:800,
+            fontSize:"clamp(36px,8vw,64px)",
+            lineHeight:1.05,letterSpacing:"-0.02em",
+            color:"#fff",margin:0,
+          }}>
+            Meta<span style={{
+              background:"linear-gradient(135deg,#4a9eff,#88c4ff,#e0f0ff)",
+              WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
+            }}>flow</span>
+          </h1>
+          <div style={{
+            fontFamily:"Syne,sans-serif",fontWeight:800,
+            fontSize:"clamp(36px,8vw,64px)",
+            lineHeight:1.05,letterSpacing:"-0.02em",
+            color:"#fff",
+          }}>Analytics</div>
+        </div>
+
+        {/* Tagline */}
+        <div style={{
+          position:"relative",zIndex:1,marginTop:18,
+          opacity:phase>=1?1:0,
+          transform:phase>=1?"translateY(0)":"translateY(10px)",
+          transition:"opacity 0.6s ease, transform 0.6s ease",
+          fontFamily:"DM Mono,monospace",fontSize:13,fontWeight:300,
+          color:"rgba(120,170,255,0.5)",letterSpacing:"0.18em",
+        }}>
+          // real-time p2p intelligence
+        </div>
+
+        {/* Loading bar */}
+        <div style={{
+          position:"absolute",bottom:0,left:0,right:0,height:2,
+          background:"rgba(80,130,255,0.08)",overflow:"hidden",
+        }}>
+          <div style={{
+            height:"100%",
+            background:"linear-gradient(90deg,transparent,rgba(80,160,255,0.6),rgba(38,166,154,0.8),transparent)",
+            animation:"introBar 2.8s ease forwards",
+          }}/>
+        </div>
+
+        <style>{`
+          @keyframes introBar{
+            0%{transform:translateX(-100%);width:100%;}
+            100%{transform:translateX(100%);width:100%;}
+          }
+          @keyframes introPulseBox{
+            0%,100%{box-shadow:0 0 40px rgba(80,130,255,0.15),inset 0 0 20px rgba(80,130,255,0.05);}
+            50%{box-shadow:0 0 60px rgba(80,130,255,0.3),inset 0 0 30px rgba(80,130,255,0.1);}
+          }
+          @keyframes introOrb1{
+            0%{opacity:0;transform:scale(0.8);}
+            100%{opacity:1;transform:scale(1);}
+          }
+          @keyframes introOrb2{
+            0%{opacity:0;transform:scale(0.8);}
+            50%{opacity:1;transform:scale(1);}
+          }
+        `}</style>
+      </div>
+    )
+  }
+
   export default function App(){
+    const [intro,setIntro]=useState(true)
     const [mode,setMode]=useState("p2p")
     const [offers,setOffers]=useState([])
     const [loading,setLoading]=useState(true)
@@ -601,6 +732,7 @@ import { useState, useEffect, useRef, useCallback } from "react"
 
     return(
       <>
+        {intro&&<IntroScreen onDone={()=>setIntro(false)}/>}
         <style>{`
           @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap');
           *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}

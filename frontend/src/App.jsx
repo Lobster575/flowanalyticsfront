@@ -701,7 +701,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
           fontFamily:"DM Mono,monospace",fontSize:13,fontWeight:300,
           color:"rgba(120,170,255,0.5)",letterSpacing:"0.18em",
         }}>
-          // real-time p2p intelligence
+          // P2P monitor by Lobster
         </div>
 
         {/* Loading bar */}
@@ -958,7 +958,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
                 display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
                 minHeight:"60vh",gap:20,padding:32,textAlign:"center",
               }}>
-                <div style={{fontSize:52,animation:"spinCW 3s linear infinite",display:"inline-block"}}>⟳</div>
+                <div style={{fontSize:52, animation:"spinCW 3s linear infinite", display:"inline-block", color:"white"}}>⟳</div>
                 <div style={{fontFamily:"Syne,sans-serif",fontSize:18,fontWeight:700,color:"#c8e0ff"}}>Rotate your phone</div>
                 <div style={{fontFamily:"DM Mono,monospace",fontSize:12,color:"rgba(120,170,255,0.45)",lineHeight:1.7}}>
                   Market charts require<br/>landscape orientation

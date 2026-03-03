@@ -586,24 +586,81 @@ import { useState, useEffect, useRef, useCallback } from "react"
           animation:"introOrb2 2.5s ease forwards",
         }}/>
 
-        {/* Logo mark */}
+        {/* Logo mark — animated SVG */}
         <div style={{
           position:"relative",zIndex:1,
           opacity:phase>=0?1:0,
           transform:phase>=0?"translateY(0)":"translateY(20px)",
           transition:"opacity 0.8s ease, transform 0.8s ease",
-          marginBottom:24,
+          marginBottom:32,
           display:"flex",alignItems:"center",justifyContent:"center",
+          width:120,height:120,
         }}>
+          <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg"
+            style={{position:"absolute",top:0,left:0}}>
+            {/* Outer ring — slow spin */}
+            <g style={{transformOrigin:"60px 60px",animation:"spinCW 8s linear infinite"}}>
+              <circle cx="60" cy="60" r="56" stroke="rgba(255,255,255,0.12)" strokeWidth="1"/>
+              {/* tick marks on outer ring */}
+              {Array.from({length:12},(_,i)=>{
+                const a=(i/12)*Math.PI*2, r1=52, r2=56
+                return <line key={i}
+                  x1={60+r1*Math.cos(a)} y1={60+r1*Math.sin(a)}
+                  x2={60+r2*Math.cos(a)} y2={60+r2*Math.sin(a)}
+                  stroke="rgba(255,255,255,0.5)" strokeWidth={i%3===0?"1.5":"0.8"}/>
+              })}
+              {/* dashed arc segments */}
+              <circle cx="60" cy="60" r="56" stroke="rgba(255,255,255,0.3)" strokeWidth="1.2"
+                strokeDasharray="12 6" strokeDashoffset="0"/>
+            </g>
+
+            {/* Middle ring — counter spin */}
+            <g style={{transformOrigin:"60px 60px",animation:"spinCCW 5s linear infinite"}}>
+              <circle cx="60" cy="60" r="42" stroke="rgba(255,255,255,0.08)" strokeWidth="1"/>
+              <circle cx="60" cy="60" r="42" stroke="rgba(255,255,255,0.25)" strokeWidth="1"
+                strokeDasharray="5 20" strokeDashoffset="0"/>
+              {/* 6 diamond dots */}
+              {Array.from({length:6},(_,i)=>{
+                const a=(i/6)*Math.PI*2-Math.PI/2
+                return <rect key={i}
+                  x={60+42*Math.cos(a)-3} y={60+42*Math.sin(a)-3}
+                  width="6" height="6" rx="1"
+                  fill="white" opacity="0.7"
+                  style={{transformOrigin:`${60+42*Math.cos(a)}px ${60+42*Math.sin(a)}px`,transform:"rotate(45deg)"}}/>
+              })}
+            </g>
+
+            {/* Inner hexagon ring — slow spin */}
+            <g style={{transformOrigin:"60px 60px",animation:"spinCW 12s linear infinite"}}>
+              {Array.from({length:6},(_,i)=>{
+                const a=(i/6)*Math.PI*2-Math.PI/2
+                const nx=60+26*Math.cos(a), ny=60+26*Math.sin(a)
+                const a2=((i+1)/6)*Math.PI*2-Math.PI/2
+                const nx2=60+26*Math.cos(a2), ny2=60+26*Math.sin(a2)
+                return <line key={i} x1={nx} y1={ny} x2={nx2} y2={ny2}
+                  stroke="rgba(255,255,255,0.35)" strokeWidth="1.2"/>
+              })}
+            </g>
+
+            {/* Core — pulse */}
+            <circle cx="60" cy="60" r="14" fill="rgba(255,255,255,0.06)"
+              stroke="rgba(255,255,255,0.8)" strokeWidth="1.5"
+              style={{animation:"introPulseBox 2s ease infinite"}}/>
+            <circle cx="60" cy="60" r="5" fill="white" opacity="0.9"/>
+
+            {/* Cross lines through center */}
+            <line x1="60" y1="44" x2="60" y2="52" stroke="white" strokeWidth="1" opacity="0.4"/>
+            <line x1="60" y1="68" x2="60" y2="76" stroke="white" strokeWidth="1" opacity="0.4"/>
+            <line x1="44" y1="60" x2="52" y2="60" stroke="white" strokeWidth="1" opacity="0.4"/>
+            <line x1="68" y1="60" x2="76" y2="60" stroke="white" strokeWidth="1" opacity="0.4"/>
+          </svg>
+
+          {/* Glow behind */}
           <div style={{
-            width:64,height:64,borderRadius:16,
-            background:"rgba(8,16,42,0.9)",
-            border:"1.5px solid rgba(90,140,255,0.3)",
-            display:"flex",alignItems:"center",justifyContent:"center",
-            fontSize:28,
-            boxShadow:"0 0 40px rgba(80,130,255,0.15), inset 0 0 20px rgba(80,130,255,0.05)",
-            animation:"introPulseBox 2s ease infinite",
-          }}>⬡</div>
+            position:"absolute",width:80,height:80,borderRadius:"50%",
+            background:"radial-gradient(circle,rgba(100,160,255,0.18) 0%,transparent 70%)",
+            animation:"introPulseBox 2.5s ease infinite",
+          }}/>
         </div>
 
         {/* Title */}
@@ -673,6 +730,14 @@ import { useState, useEffect, useRef, useCallback } from "react"
           @keyframes introOrb2{
             0%{opacity:0;transform:scale(0.8);}
             50%{opacity:1;transform:scale(1);}
+          }
+          @keyframes spinCW{
+            from{transform:rotate(0deg);}
+            to{transform:rotate(360deg);}
+          }
+          @keyframes spinCCW{
+            from{transform:rotate(0deg);}
+            to{transform:rotate(-360deg);}
           }
         `}</style>
       </div>

@@ -336,7 +336,8 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
             url={spread.sell_url}
             accentColor="#4a9eff"
           />
-        </div>}
+        </div>
+        }
       </div>
     )
   }

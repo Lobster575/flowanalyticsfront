@@ -942,7 +942,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 
         <div className="wrapper">
           <div className="header">
-            <div className="logo">⬡ Metaflow</div>
+            <div className="logo">⬡ Metaflow by Lobster </div>
             <h1 className="title">Meta<span>flow</span><br/>Analytics</h1>
             <p className="subtitle">// real-time · {mode==="p2p"?`${exchange} p2p`:"market overview"}</p>
           </div>

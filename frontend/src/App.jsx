@@ -301,17 +301,18 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
     return(
       <div style={{padding:"14px 14px 16px",borderBottom:"1px solid rgba(38,166,154,0.12)",background:"linear-gradient(135deg,rgba(38,166,154,0.05) 0%,rgba(4,10,28,0.0) 100%)"}}>
         {/* Header row */}
-        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
+        <div onClick={()=>setCollapsed(c=>!c)} style={{display:"flex",alignItems:"center",gap:8,marginBottom:collapsed?0:12,cursor:"pointer",userSelect:"none"}}>
           <span style={{fontSize:8,letterSpacing:"0.2em",textTransform:"uppercase",color:"rgba(38,166,154,0.55)",fontFamily:"DM Mono,monospace"}}>⚡ Best Spread</span>
           <div style={{flex:1,height:1,background:"rgba(38,166,154,0.1)"}}/>
-          <div style={{fontFamily:"DM Mono,monospace",fontSize:15,fontWeight:800,color:pctColor,
+          <div style={{fontFamily:"DM Mono,monospace",fontSize:13,fontWeight:800,color:pctColor,
             background:`${pctColor}15`,padding:"2px 10px",borderRadius:20,border:`1px solid ${pctColor}30`,
-            boxShadow:`0 0 12px ${pctColor}20`}}>
+            boxShadow:`0 0 12px ${pctColor}20`,flexShrink:0}}>
             {pct>0?"+":""}{pct}%
           </div>
+          <span style={{fontFamily:"DM Mono,monospace",fontSize:9,color:"rgba(80,130,255,0.3)",marginLeft:4,flexShrink:0,transition:"transform .2s",transform:collapsed?"rotate(0deg)":"rotate(180deg)"}}>▼</span>
         </div>
-        {/* Cards row - flex-wrap on mobile */}
-        <div style={{display:"flex",alignItems:"stretch",gap:8,flexWrap:"wrap"}}>
+        {/* Cards row - collapsible */}
+        {!collapsed&&<div style={{display:"flex",alignItems:"stretch",gap:8,flexWrap:"wrap"}}>
           <SideCard
             label="Buy"
             price={spread.buy_price}
@@ -336,8 +337,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
             url={spread.sell_url}
             accentColor="#4a9eff"
           />
-        </div>
-        }
+        </div>}
       </div>
     )
   }

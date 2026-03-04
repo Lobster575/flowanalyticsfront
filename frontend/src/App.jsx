@@ -257,48 +257,154 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
     const [spread,setSpread]=useState(null)
     useEffect(()=>{
       const load=()=>fetch("https://flowanalytics-production.up.railway.app/p2p/spread")
-        .then(r=>r.json())
-        .then(d=>{ if(d.spread) setSpread(d.spread) })
-        .catch(()=>{})
-      load();const iv=setInterval(load,30000);return()=>clearInterval(iv)
+        .then(r=>r.json()).then(d=>{ if(d.spread) setSpread(d.spread) }).catch(()=>{})
+      load();const iv=setInterval(load,60000);return()=>clearInterval(iv)
     },[])
     if(!spread)return null
-    const buyUrl  = spread.buy_url  || null
-    const sellUrl = spread.sell_url || null
+    const pct=spread.spread_pct
+    const pctColor=pct>1?"#3dffa0":pct>0?"#f0b90b":"#ef5350"
+    const SideCard=({label,price,currency,advertiser,exchange,url,accentColor})=>(
+      <div style={{flex:1,minWidth:0,background:"rgba(4,10,28,0.5)",borderRadius:12,padding:"12px 14px",border:`1px solid ${accentColor}22`,display:"flex",flexDirection:"column",gap:6}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <span style={{fontFamily:"DM Mono,monospace",fontSize:8,letterSpacing:"0.18em",textTransform:"uppercase",color:`${accentColor}99`}}>{label}</span>
+          <span style={{fontFamily:"DM Mono,monospace",fontSize:8,color:"rgba(100,140,255,0.35)",background:"rgba(80,120,255,0.08)",padding:"2px 7px",borderRadius:20,border:"1px solid rgba(80,120,255,0.1)"}}>{exchange}</span>
+        </div>
+        <div style={{fontFamily:"DM Mono,monospace",fontSize:22,fontWeight:800,color:accentColor,lineHeight:1}}>
+          {price.toFixed(3)}
+          <span style={{fontSize:11,fontWeight:400,color:"rgba(180,210,255,0.5)",marginLeft:5}}>{currency}</span>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:5,minWidth:0}}>
+          {url
+            ?<a href={url} target="_blank" rel="noreferrer" style={{fontFamily:"DM Mono,monospace",fontSize:11,color:"#5ba8ff",textDecoration:"none",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:3}}>
+              <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{advertiser||exchange}</span>
+              <span style={{flexShrink:0,opacity:0.6,fontSize:9}}>↗</span>
+            </a>
+            :<span style={{fontFamily:"DM Mono,monospace",fontSize:11,color:"#5ba8ff",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{advertiser||exchange}</span>
+          }
+        </div>
+        {url&&(
+          <a href={url} target="_blank" rel="noreferrer" style={{
+            marginTop:4,display:"inline-flex",alignItems:"center",justifyContent:"center",gap:4,
+            padding:"5px 10px",borderRadius:8,border:`1px solid ${accentColor}40`,
+            background:`${accentColor}0f`,color:accentColor,
+            fontFamily:"DM Mono,monospace",fontSize:10,fontWeight:600,
+            textDecoration:"none",transition:"all .18s",cursor:"pointer",
+          }}
+          onMouseEnter={e=>{e.currentTarget.style.background=`${accentColor}22`}}
+          onMouseLeave={e=>{e.currentTarget.style.background=`${accentColor}0f`}}>
+            View advertiser ↗
+          </a>
+        )}
+      </div>
+    )
     return(
-      <div style={{padding:"12px 16px",borderBottom:"1px solid rgba(38,166,154,0.15)",background:"rgba(38,166,154,0.06)"}}>
-        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:7}}>
-          <span style={{fontSize:8,letterSpacing:"0.18em",textTransform:"uppercase",color:"rgba(38,166,154,0.6)",fontFamily:"DM Mono,monospace"}}>⚡ Best Spread</span>
-          <span style={{marginLeft:"auto",fontFamily:"DM Mono,monospace",fontSize:14,fontWeight:800,color:"#3dffa0"}}>+{spread.spread_pct}%</span>
+      <div style={{padding:"14px 14px 16px",borderBottom:"1px solid rgba(38,166,154,0.12)",background:"linear-gradient(135deg,rgba(38,166,154,0.05) 0%,rgba(4,10,28,0.0) 100%)"}}>
+        {/* Header row */}
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
+          <span style={{fontSize:8,letterSpacing:"0.2em",textTransform:"uppercase",color:"rgba(38,166,154,0.55)",fontFamily:"DM Mono,monospace"}}>⚡ Best Spread</span>
+          <div style={{flex:1,height:1,background:"rgba(38,166,154,0.1)"}}/>
+          <div style={{fontFamily:"DM Mono,monospace",fontSize:15,fontWeight:800,color:pctColor,
+            background:`${pctColor}15`,padding:"2px 10px",borderRadius:20,border:`1px solid ${pctColor}30`,
+            boxShadow:`0 0 12px ${pctColor}20`}}>
+            {pct>0?"+":""}{pct}%
+          </div>
         </div>
-        <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap",fontFamily:"DM Mono,monospace",fontSize:12}}>
-          {/* BUY side */}
-          <span style={{color:"rgba(140,180,255,0.5)"}}>BUY</span>
-          <span style={{color:"#c8e0ff",fontWeight:600}}>{spread.fiat}</span>
-          <span style={{color:"#26a69a",fontWeight:700}}>{spread.buy_price.toFixed(3)}</span>
-          <span style={{color:"rgba(100,150,255,0.35)",fontSize:9}}>via</span>
-          {buyUrl
-            ? <a href={buyUrl} target="_blank" rel="noreferrer"
-                style={{color:"#5ba8ff",textDecoration:"none",borderBottom:"1px dotted rgba(91,168,255,0.4)"}}>
-                {spread.buy_advertiser||spread.buy_exchange} ↗
-              </a>
-            : <span style={{color:"#5ba8ff"}}>{spread.buy_advertiser||spread.buy_exchange}</span>
-          }
-          {/* Arrow */}
-          <span style={{color:"rgba(38,166,154,0.5)",fontSize:16,margin:"0 2px"}}>→</span>
-          {/* SELL side */}
-          <span style={{color:"rgba(140,180,255,0.5)"}}>SELL</span>
-          <span style={{color:"#c8e0ff",fontWeight:600}}>{spread.crypto}</span>
-          <span style={{color:"#26a69a",fontWeight:700}}>{spread.sell_price.toFixed(3)}</span>
-          <span style={{color:"rgba(100,150,255,0.35)",fontSize:9}}>via</span>
-          {sellUrl
-            ? <a href={sellUrl} target="_blank" rel="noreferrer"
-                style={{color:"#5ba8ff",textDecoration:"none",borderBottom:"1px dotted rgba(91,168,255,0.4)"}}>
-                {spread.sell_advertiser||spread.sell_exchange} ↗
-              </a>
-            : <span style={{color:"#5ba8ff"}}>{spread.sell_advertiser||spread.sell_exchange}</span>
-          }
+        {/* Cards row */}
+        <div style={{display:"flex",alignItems:"stretch",gap:8}}>
+          <SideCard
+            label="Buy"
+            price={spread.buy_price}
+            currency={spread.fiat}
+            advertiser={spread.buy_advertiser}
+            exchange={spread.buy_exchange}
+            url={spread.buy_url}
+            accentColor="#26a69a"
+          />
+          {/* Arrow center */}
+          <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,padding:"0 2px",flexShrink:0}}>
+            <div style={{width:1,flex:1,background:"rgba(38,166,154,0.1)"}}/>
+            <div style={{width:28,height:28,borderRadius:"50%",background:"rgba(38,166,154,0.1)",border:"1px solid rgba(38,166,154,0.25)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:"rgba(38,166,154,0.7)",flexShrink:0}}>→</div>
+            <div style={{width:1,flex:1,background:"rgba(38,166,154,0.1)"}}/>
+          </div>
+          <SideCard
+            label="Sell"
+            price={spread.sell_price}
+            currency={spread.crypto}
+            advertiser={spread.sell_advertiser}
+            exchange={spread.sell_exchange}
+            url={spread.sell_url}
+            accentColor="#4a9eff"
+          />
         </div>
+      </div>
+    )
+  }
+
+  // ─── Market Sentiment ─────────────────────────────────────────────────────────
+  function MarketSentiment(){
+    const [data,setData]=useState(null)
+    const [collapsed,setCollapsed]=useState(false)
+    useEffect(()=>{
+      const load=async()=>{
+        try{
+          const res=await fetch("https://flowanalytics-production.up.railway.app/market/trending")
+          const json=await res.json()
+          const coins=json.data||[]
+          const btc=coins.find(c=>c.symbol==="BTC"||c.symbol==="BTCUSDT")
+          const eth=coins.find(c=>c.symbol==="ETH"||c.symbol==="ETHUSDT")
+          const usdt=coins.find(c=>c.symbol==="USDT"||c.symbol==="USDTUSDC")
+          setData({
+            btc:  btc  ? parseFloat(btc.change_24h  || btc.priceChangePercent  || 0) : null,
+            eth:  eth  ? parseFloat(eth.change_24h  || eth.priceChangePercent  || 0) : null,
+            usdt: usdt ? parseFloat(usdt.change_24h || usdt.priceChangePercent || 0) : null,
+            coins: coins.slice(0,6),
+          })
+        }catch(e){}
+      }
+      load();const iv=setInterval(load,60000);return()=>clearInterval(iv)
+    },[])
+    const Ticker=({label,value,prefix=""})=>{
+      if(value===null)return null
+      const up=value>=0
+      const col=up?"#26a69a":"#ef5350"
+      return(
+        <div style={{display:"flex",alignItems:"center",gap:5,padding:"5px 10px",borderRadius:8,background:up?"rgba(38,166,154,0.07)":"rgba(239,83,80,0.07)",border:`1px solid ${col}22`}}>
+          <span style={{fontFamily:"DM Mono,monospace",fontSize:10,color:"rgba(180,210,255,0.55)",fontWeight:500}}>{label}</span>
+          <span style={{fontFamily:"DM Mono,monospace",fontSize:11,fontWeight:700,color:col}}>{prefix}{up?"+":""}{value.toFixed(2)}%</span>
+        </div>
+      )
+    }
+    return(
+      <div className="glass-strong" style={{marginBottom:13,overflow:"hidden"}}>
+        <div onClick={()=>setCollapsed(c=>!c)} style={{padding:"10px 14px",display:"flex",alignItems:"center",gap:8,cursor:"pointer",userSelect:"none"}}>
+          <span style={{fontSize:8,letterSpacing:"0.18em",textTransform:"uppercase",color:"rgba(120,170,255,0.45)",fontFamily:"DM Mono,monospace"}}>📊 Market Sentiment</span>
+          <div style={{flex:1,height:1,background:"rgba(80,130,255,0.08)"}}/>
+          {!collapsed&&data&&(
+            <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
+              <Ticker label="BTC" value={data.btc}/>
+              <Ticker label="ETH" value={data.eth}/>
+              {data.usdt!==null&&<Ticker label="USDT premium" value={data.usdt} prefix=""/>}
+            </div>
+          )}
+          <span style={{fontFamily:"DM Mono,monospace",fontSize:9,color:"rgba(80,130,255,0.3)",marginLeft:6,flexShrink:0,transition:"transform .2s",transform:collapsed?"rotate(180deg)":"rotate(0deg)"}}>▲</span>
+        </div>
+        {!collapsed&&data&&(
+          <div style={{padding:"0 14px 12px",display:"flex",gap:6,flexWrap:"wrap"}}>
+            {data.coins.map((c,i)=>{
+              const chg=parseFloat(c.change_24h||c.priceChangePercent||0)
+              const up=chg>=0
+              const col=up?"#26a69a":"#ef5350"
+              const sym=(c.symbol||"").replace("USDT","")
+              if(!sym)return null
+              return(
+                <div key={i} style={{display:"flex",alignItems:"center",gap:5,padding:"4px 9px",borderRadius:7,background:"rgba(4,10,28,0.5)",border:"1px solid rgba(80,130,255,0.1)"}}>
+                  <span style={{fontFamily:"DM Mono,monospace",fontSize:10,color:"rgba(180,210,255,0.6)"}}>{sym}</span>
+                  <span style={{fontFamily:"DM Mono,monospace",fontSize:10,fontWeight:700,color:col}}>{up?"+":""}{chg.toFixed(2)}%</span>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
     )
   }
@@ -701,7 +807,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
           fontFamily:"DM Mono,monospace",fontSize:13,fontWeight:300,
           color:"rgba(120,170,255,0.5)",letterSpacing:"0.18em",
         }}>
-          // P2P monitor by Lobster
+          // real-time p2p intelligence
         </div>
 
         {/* Loading bar */}
@@ -864,7 +970,14 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
           .ex-tab{padding:7px 13px;border-radius:10px;border:1.5px solid rgba(70,120,220,0.14);background:rgba(6,14,36,0.5);cursor:pointer;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:rgba(120,170,255,0.35);transition:all .2s;display:flex;align-items:center;gap:6px;}
           .ex-tab.active{background:rgba(10,24,72,0.85);border-color:rgba(90,150,255,0.35);color:#d8ecff;}
           .ex-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
-          .controls{padding:12px 15px;display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-bottom:12px;}
+          .controls{padding:12px 15px;display:flex;flex-direction:column;gap:8px;margin-bottom:12px;}
+          .ctrl-row{display:flex;align-items:center;gap:7px;flex-wrap:nowrap;}
+          .ctrl-row-main{flex-wrap:wrap;}
+          .ctrl-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:rgba(80,130,255,0.35);white-space:nowrap;flex-shrink:0;}
+          .ctrl-sep{font-family:'DM Mono',monospace;font-size:14px;color:rgba(80,130,255,0.25);flex-shrink:0;}
+          .live-btn{display:flex;align-items:center;gap:5px;padding:4px 8px;border-radius:8px;border:none;cursor:pointer;transition:all .2s;}
+          .desktop-only{display:flex;}
+          .mobile-only{display:none;}
           .sel-wrap{position:relative;}
           .sel-wrap select{appearance:none;background:rgba(4,10,26,0.88);border:1.5px solid rgba(70,120,220,0.18);color:#b8d4ff;font-family:'DM Mono',monospace;font-size:12px;font-weight:500;padding:7px 26px 7px 10px;border-radius:10px;cursor:pointer;outline:none;transition:border-color .2s;}
           .sel-wrap select:hover{border-color:rgba(70,120,220,0.4);}
@@ -915,15 +1028,19 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
           .divider{width:1px;height:15px;background:rgba(60,100,200,0.14);}
           /* Mobile */
           @media(max-width:640px){
-            .wrapper { overflow-x: hidden; }
+            .wrapper{overflow-x:hidden;}
             .bg-orb{display:none;}
             .glass-strong{border-radius:14px;}
-            .controls{padding:10px 12px;gap:6px;}
-            .sel-wrap select{font-size:11px;padding:7px 22px 7px 9px;}
-            .side-btn{padding:7px 11px;font-size:11px;}
-            .sort-btn,.rf-btn{padding:5px 7px;font-size:9px;}
+            .controls{padding:12px 13px;gap:9px;}
+            .ctrl-row{gap:6px;}
+            .ctrl-row-main{flex-wrap:nowrap;}
+            .sel-wrap select{font-size:11px;padding:6px 20px 6px 8px;}
+            .side-btn{padding:6px 10px;font-size:11px;}
+            .sort-btn,.rf-btn{padding:5px 8px;font-size:9px;}
             .divider{display:none;}
-            .meta{margin-left:0;width:100%;justify-content:flex-end;}
+            .meta{margin-left:0;align-items:center;}
+            .desktop-only{display:none !important;}
+            .mobile-only{display:flex !important;}
             /* hide desktop table on mobile */
             .desktop-table{display:none !important;}
             /* show cards on mobile */
@@ -942,7 +1059,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 
         <div className="wrapper">
           <div className="header">
-            <div className="logo">⬡ Metaflow by Lobster </div>
+            <div className="logo">⬡ Metaflow</div>
             <h1 className="title">Meta<span>flow</span><br/>Analytics</h1>
             <p className="subtitle">// real-time · {mode==="p2p"?`${exchange} p2p`:"market overview"}</p>
           </div>
@@ -958,7 +1075,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
                 display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
                 minHeight:"60vh",gap:20,padding:32,textAlign:"center",
               }}>
-                <div style={{fontSize:52, animation:"spinCW 3s linear infinite", display:"inline-block", color:"white"}}>⟳</div>
+                <div style={{fontSize:52,animation:"spinCW 3s linear infinite",display:"inline-block"}}>⟳</div>
                 <div style={{fontFamily:"Syne,sans-serif",fontSize:18,fontWeight:700,color:"#c8e0ff"}}>Rotate your phone</div>
                 <div style={{fontFamily:"DM Mono,monospace",fontSize:12,color:"rgba(120,170,255,0.45)",lineHeight:1.7}}>
                   Market charts require<br/>landscape orientation
@@ -974,77 +1091,93 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
               ))}
             </div>
 
+            {/* ── Controls: desktop flat row / mobile grid ── */}
             <div className="glass-strong controls">
-              <div className="sel-wrap">
-                <select value={fiat} onChange={e=>setFiat(e.target.value)}>
-                  <optgroup label="Fiat">{FIATS.map(f=><option key={f}>{f}</option>)}</optgroup>
-                  <optgroup label="Crypto">{CRYPTOS.map(c=><option key={c}>{c}</option>)}</optgroup>
-                </select>
-              </div>
-              <div className="divider"/>
-              <div className="sel-wrap">
-                <select value={crypto} onChange={e=>setCrypto(e.target.value)}>
-                  <optgroup label="Crypto">{CRYPTOS.map(c=><option key={c}>{c}</option>)}</optgroup>
-                  <optgroup label="Fiat">{FIATS.map(f=><option key={f}>{f}</option>)}</optgroup>
-                </select>
-              </div>
-              <div className="divider"/>
-              <div className="side-toggle">
-                {["BUY","SELL"].map(s=>(
-                  <button key={s} className={`side-btn ${side===s?(s==="BUY"?"buy-active":"sell-active"):""}`} onClick={()=>setSide(s)}>{s}</button>
-                ))}
-              </div>
-              <div className="divider"/>
-              <div className="sort-tabs">
-                {SORT_OPTIONS.map(o=>(
-                  <button key={o.id} className={`sort-btn ${sort===o.id?"active":""}`} onClick={()=>setSort(o.id)}>{o.label}</button>
-                ))}
-              </div>
-              <div className="divider"/>
-              <div className="rate-filter">
-                {RATE_FILTERS.map(r=>(
-                  <button key={r.id} className={`rf-btn ${minRate===r.id?"active":""}`} onClick={()=>setMinRate(r.id)}>{r.label}</button>
-                ))}
-              </div>
-              <div className="divider"/>
-              {/* Payment filter */}
-              <div className="sel-wrap">
-                <select value={paymentFilter} onChange={e=>setPaymentFilter(e.target.value)}>
-                  <option value="">All payments</option>
-                  {availablePayments.filter(p=>p).map(pm=>(
-                    <option key={pm} value={pm}>{pm}</option>
+
+              {/* ROW 1: pair + side + live (always visible) */}
+              <div className="ctrl-row ctrl-row-main">
+                <div className="sel-wrap">
+                  <select value={fiat} onChange={e=>setFiat(e.target.value)}>
+                    <optgroup label="Fiat">{FIATS.map(f=><option key={f}>{f}</option>)}</optgroup>
+                    <optgroup label="Crypto">{CRYPTOS.map(c=><option key={c}>{c}</option>)}</optgroup>
+                  </select>
+                </div>
+                <span className="ctrl-sep">/</span>
+                <div className="sel-wrap">
+                  <select value={crypto} onChange={e=>setCrypto(e.target.value)}>
+                    <optgroup label="Crypto">{CRYPTOS.map(c=><option key={c}>{c}</option>)}</optgroup>
+                    <optgroup label="Fiat">{FIATS.map(f=><option key={f}>{f}</option>)}</optgroup>
+                  </select>
+                </div>
+                <div className="divider"/>
+                <div className="side-toggle">
+                  {["BUY","SELL"].map(s=>(
+                    <button key={s} className={`side-btn ${side===s?(s==="BUY"?"buy-active":"sell-active"):""}`} onClick={()=>setSide(s)}>{s}</button>
                   ))}
-                </select>
-              </div>
-              <div className="meta">
-                {/* Live toggle */}
-                <button onClick={()=>setLiveMode(l=>!l)} style={{
-                  display:"flex",alignItems:"center",gap:5,
-                  padding:"4px 8px",borderRadius:8,border:"none",cursor:"pointer",
-                  background:liveMode?"rgba(38,166,154,0.12)":"rgba(60,80,150,0.12)",
-                  transition:"all .2s",
-                }}>
-                  <span style={{
-                    width:6,height:6,borderRadius:"50%",flexShrink:0,
-                    background:liveMode?"#26a69a":"rgba(120,150,255,0.3)",
-                    boxShadow:liveMode?"0 0 6px #26a69a":"none",
-                    animation:liveMode?"pulse 1.6s infinite":"none",
-                  }}/>
-                  <span style={{fontFamily:"DM Mono,monospace",fontSize:9,letterSpacing:"0.1em",
-                    color:liveMode?"#26a69a":"rgba(100,140,255,0.35)",fontWeight:600}}>
-                    {liveMode?"LIVE":"OFF"}
-                  </span>
-                </button>
-                <LiveDot lastUpdated={lastUpdated}/>
-                {liveMode&&<div className="countdown">
-                  <svg width="26" height="26" viewBox="0 0 32 32">
+                </div>
+                <div className="divider desktop-only"/>
+                {/* Live — desktop only here */}
+                <div className="meta desktop-only">
+                  <button onClick={()=>setLiveMode(l=>!l)} className="live-btn" style={{background:liveMode?"rgba(38,166,154,0.12)":"rgba(60,80,150,0.12)"}}>
+                    <span style={{width:6,height:6,borderRadius:"50%",flexShrink:0,background:liveMode?"#26a69a":"rgba(120,150,255,0.3)",boxShadow:liveMode?"0 0 6px #26a69a":"none",animation:liveMode?"pulse 1.6s infinite":"none"}}/>
+                    <span style={{fontFamily:"DM Mono,monospace",fontSize:9,letterSpacing:"0.1em",color:liveMode?"#26a69a":"rgba(100,140,255,0.35)",fontWeight:600}}>{liveMode?"LIVE":"OFF"}</span>
+                  </button>
+                  <LiveDot lastUpdated={lastUpdated}/>
+                  {liveMode&&<div className="countdown"><svg width="26" height="26" viewBox="0 0 32 32">
                     <circle className="countdown-track" cx="16" cy="16" r="14"/>
                     <circle className="countdown-fill" cx="16" cy="16" r="14" style={{strokeDashoffset:88-(countdown/TTL)*88}}/>
-                  </svg>
-                </div>}
+                  </svg></div>}
+                </div>
               </div>
+
+              {/* ROW 2: sort + rate (always) */}
+              <div className="ctrl-row ctrl-row-filters">
+                <div className="ctrl-label">Sort</div>
+                <div className="sort-tabs">
+                  {SORT_OPTIONS.map(o=>(
+                    <button key={o.id} className={`sort-btn ${sort===o.id?"active":""}`} onClick={()=>setSort(o.id)}>{o.label}</button>
+                  ))}
+                </div>
+                <div className="divider"/>
+                <div className="ctrl-label">Rate</div>
+                <div className="rate-filter">
+                  {RATE_FILTERS.map(r=>(
+                    <button key={r.id} className={`rf-btn ${minRate===r.id?"active":""}`} onClick={()=>setMinRate(r.id)}>{r.label}</button>
+                  ))}
+                </div>
+              </div>
+
+              {/* ROW 3: payment + live (mobile splits live here) */}
+              <div className="ctrl-row ctrl-row-payment">
+                <div className="ctrl-label">Pay</div>
+                <div className="sel-wrap" style={{flex:1}}>
+                  <select value={paymentFilter} onChange={e=>setPaymentFilter(e.target.value)}>
+                    <option value="">All methods</option>
+                    {availablePayments.filter(p=>p).map(pm=>(
+                      <option key={pm} value={pm}>{pm}</option>
+                    ))}
+                  </select>
+                </div>
+                {/* Live — mobile only here */}
+                <div className="meta mobile-only" style={{marginLeft:"auto"}}>
+                  <button onClick={()=>setLiveMode(l=>!l)} className="live-btn" style={{background:liveMode?"rgba(38,166,154,0.12)":"rgba(60,80,150,0.12)"}}>
+                    <span style={{width:6,height:6,borderRadius:"50%",flexShrink:0,background:liveMode?"#26a69a":"rgba(120,150,255,0.3)",boxShadow:liveMode?"0 0 6px #26a69a":"none",animation:liveMode?"pulse 1.6s infinite":"none"}}/>
+                    <span style={{fontFamily:"DM Mono,monospace",fontSize:9,letterSpacing:"0.1em",color:liveMode?"#26a69a":"rgba(100,140,255,0.35)",fontWeight:600}}>{liveMode?"LIVE":"OFF"}</span>
+                  </button>
+                  <LiveDot lastUpdated={lastUpdated}/>
+                  {liveMode&&<div className="countdown"><svg width="26" height="26" viewBox="0 0 32 32">
+                    <circle className="countdown-track" cx="16" cy="16" r="14"/>
+                    <circle className="countdown-fill" cx="16" cy="16" r="14" style={{strokeDashoffset:88-(countdown/TTL)*88}}/>
+                  </svg></div>}
+                </div>
+              </div>
+
             </div>
 
+            <MarketSentiment/>
+            <div className="glass-strong" style={{overflow:"hidden",marginBottom:13}}>
+              <SpreadBanner/>
+            </div>
             {!loading&&displayOffers.length>0&&<Calculator offers={displayOffers} side={side} fiat={fiat} crypto={crypto}/>}
 
             {/* Loading / error state */}
@@ -1060,8 +1193,6 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
               <>
                 {/* ── Desktop table ── */}
                 <div className="glass-strong desktop-table" style={{overflow:"hidden"}}>
-                  {/* Best spread row — top of table */}
-                  <SpreadBanner/>
                   <div className="table-header">
                     <span className="th">Price</span>
                     <span className="th">Min</span>
@@ -1115,9 +1246,6 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 
                 {/* ── Mobile cards ── */}
                 <div className="mobile-cards" style={{display:"none"}}>
-                  <div className="glass-strong" style={{overflow:"hidden",marginBottom:10}}>
-                    <SpreadBanner/>
-                  </div>
                   {displayOffers.map((o,i)=>(
                     <OfferCard key={`${o.advertiser}-${i}`} o={o} i={i}
                       isBest={o.price===bestPrice} changed={changedRows[o.advertiser]} fiat={fiat}/>

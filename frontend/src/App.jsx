@@ -255,6 +255,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
   // ─── Spread Banner ────────────────────────────────────────────────────────────
   function SpreadBanner(){
     const [spread,setSpread]=useState(null)
+    const [collapsed,setCollapsed]=useState(false)
     useEffect(()=>{
       const load=()=>fetch("https://flowanalytics-production.up.railway.app/p2p/spread")
         .then(r=>r.json()).then(d=>{ if(d.spread) setSpread(d.spread) }).catch(()=>{})
@@ -335,7 +336,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
             url={spread.sell_url}
             accentColor="#4a9eff"
           />
-        </div>
+        </div>}
       </div>
     )
   }
@@ -428,45 +429,47 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
           <span style={{fontFamily:"DM Mono,monospace",fontSize:9,color:"rgba(80,130,255,0.3)",transition:"transform .2s",transform:calcOpen?"rotate(180deg)":"rotate(0deg)"}}>▼</span>
         </div>
         {calcOpen&&<div style={{padding:"0 16px 15px"}}>
-        <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
-          <div style={{flex:1,minWidth:120,display:"flex"}}>
-            <input type="number" value={amount} onChange={e=>setAmount(e.target.value)} placeholder="0.00"
-              style={{flex:1,background:"rgba(4,10,28,0.8)",border:"1px solid rgba(80,130,255,0.18)",borderRight:"none",borderRadius:"10px 0 0 10px",padding:"10px 8px",fontFamily:"DM Mono,monospace",fontSize:15,color:"#fff",outline:"none",minWidth:0}}
-              onFocus={e=>e.target.style.borderColor="rgba(80,130,255,0.45)"}
-              onBlur={e=>e.target.style.borderColor="rgba(80,130,255,0.18)"}/>
-            <div style={{background:"rgba(8,20,55,0.9)",border:"1px solid rgba(80,130,255,0.18)",borderLeft:"none",borderRadius:"0 10px 10px 0",padding:"8px 12px",display:"flex",alignItems:"center",fontFamily:"DM Mono,monospace",fontSize:12,color:"rgba(150,190,255,0.7)",whiteSpace:"nowrap"}}>
-              {fromCur}
+          <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+            <div style={{flex:1,minWidth:120,display:"flex"}}>
+              <input type="number" min="0" value={amount}
+                onChange={e=>{ const v=e.target.value; if(v===""||parseFloat(v)>=0) setAmount(v) }}
+                placeholder="0.00"
+                style={{flex:1,background:"rgba(4,10,28,0.8)",border:"1px solid rgba(80,130,255,0.18)",borderRight:"none",borderRadius:"10px 0 0 10px",padding:"10px 8px",fontFamily:"DM Mono,monospace",fontSize:15,color:"#fff",outline:"none",minWidth:0}}
+                onFocus={e=>e.target.style.borderColor="rgba(80,130,255,0.45)"}
+                onBlur={e=>e.target.style.borderColor="rgba(80,130,255,0.18)"}/>
+              <div style={{background:"rgba(8,20,55,0.9)",border:"1px solid rgba(80,130,255,0.18)",borderLeft:"none",borderRadius:"0 10px 10px 0",padding:"8px 12px",display:"flex",alignItems:"center",fontFamily:"DM Mono,monospace",fontSize:12,color:"rgba(150,190,255,0.7)",whiteSpace:"nowrap"}}>
+                {fromCur}
+              </div>
+            </div>
+            <span style={{color:"rgba(100,150,255,0.4)",fontSize:16,flexShrink:0}}>→</span>
+            <div style={{flex:1,minWidth:120,background:"rgba(4,10,28,0.6)",border:`1px solid ${outOfRange?"rgba(239,83,80,0.3)":"rgba(80,130,255,0.1)"}`,borderRadius:10,padding:"10px 12px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}}>
+              <span style={{fontFamily:"DM Mono,monospace",fontSize:16,fontWeight:600,color:outOfRange?"#ef5350":result?"#26a69a":"rgba(80,130,255,0.2)"}}>
+                {result?result.toFixed(side==="BUY"?4:2):"—"}
+              </span>
+              <span style={{fontFamily:"DM Mono,monospace",fontSize:12,color:"rgba(150,190,255,0.5)",whiteSpace:"nowrap"}}>
+                {toCur}
+              </span>
             </div>
           </div>
-          <span style={{color:"rgba(100,150,255,0.4)",fontSize:16,flexShrink:0}}>→</span>
-          <div style={{flex:1,minWidth:120,background:"rgba(4,10,28,0.6)",border:`1px solid ${outOfRange?"rgba(239,83,80,0.3)":"rgba(80,130,255,0.1)"}`,borderRadius:10,padding:"10px 12px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}}>
-            <span style={{fontFamily:"DM Mono,monospace",fontSize:16,fontWeight:600,color:outOfRange?"#ef5350":result?"#26a69a":"rgba(80,130,255,0.2)"}}>
-              {result?result.toFixed(side==="BUY"?4:2):"—"}
-            </span>
-            <span style={{fontFamily:"DM Mono,monospace",fontSize:12,color:"rgba(150,190,255,0.5)",whiteSpace:"nowrap"}}>
-              {toCur}
-            </span>
-          </div>
-        </div>
-        {outOfRange&&num>0&&(
-          <div style={{marginTop:8,fontFamily:"DM Mono,monospace",fontSize:11,color:"#ef5350"}}>
-            ⚠ No offers for {num.toLocaleString()} {fromCur}
-            {offers.length>0&&` — range: ${offers[0].min_amount.toLocaleString()}–${Math.max(...offers.map(o=>o.max_amount)).toLocaleString()}`}
-          </div>
-        )}
+          {outOfRange&&num>0&&(
+            <div style={{marginTop:8,fontFamily:"DM Mono,monospace",fontSize:11,color:"#ef5350"}}>
+              ⚠ No offers for {num.toLocaleString()} {fromCur}
+              {offers.length>0&&` — range: ${offers[0].min_amount.toLocaleString()}–${Math.max(...offers.map(o=>o.max_amount)).toLocaleString()}`}
+            </div>
+          )}
+          {best&&result&&!outOfRange&&(
+            <div style={{marginTop:10,padding:"8px 12px",background:"rgba(80,130,255,0.05)",borderRadius:8,border:"1px solid rgba(80,130,255,0.1)",display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+              <span style={{fontFamily:"DM Mono,monospace",fontSize:10,color:"rgba(100,150,255,0.4)",flexShrink:0}}>via</span>
+              {best.url
+                ?<a href={best.url} target="_blank" rel="noreferrer" style={{fontFamily:"DM Mono,monospace",fontSize:11,color:"#5ba8ff",textDecoration:"none",minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{best.trusted&&"⭐ "}{best.advertiser} ↗</a>
+                :<span style={{fontFamily:"DM Mono,monospace",fontSize:11,color:"#5ba8ff",minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{best.trusted&&"⭐ "}{best.advertiser}</span>
+              }
+              <span style={{fontFamily:"DM Mono,monospace",fontSize:10,color:"rgba(100,150,255,0.4)",marginLeft:"auto",flexShrink:0}}>
+                @ {best.price.toFixed(3)}{best.commission>0&&<span style={{color:"rgba(239,83,80,0.6)"}}> +{best.commission}%</span>}
+              </span>
+            </div>
+          )}
         </div>}
-        {best&&result&&!outOfRange&&(
-          <div style={{marginTop:8,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-            <span style={{fontFamily:"DM Mono,monospace",fontSize:10,color:"rgba(100,150,255,0.4)"}}>via</span>
-            {best.url
-              ?<a href={best.url} target="_blank" rel="noreferrer" style={{fontFamily:"DM Mono,monospace",fontSize:11,color:"#5ba8ff",textDecoration:"none"}}>{best.trusted&&"⭐ "}{best.advertiser} ↗</a>
-              :<span style={{fontFamily:"DM Mono,monospace",fontSize:11,color:"#5ba8ff"}}>{best.trusted&&"⭐ "}{best.advertiser}</span>
-            }
-            <span style={{fontFamily:"DM Mono,monospace",fontSize:10,color:"rgba(100,150,255,0.4)"}}>
-              @ {best.price.toFixed(3)}{best.commission>0&&<span style={{color:"rgba(239,83,80,0.6)"}}> +{best.commission}% → {effP?.toFixed(3)}</span>}
-            </span>
-          </div>
-        )}
       </div>
     )
   }
@@ -1070,7 +1073,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
                 display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
                 minHeight:"60vh",gap:20,padding:32,textAlign:"center",
               }}>
-                <div style={{fontSize:52, animation:"spinCW 3s linear infinite", display:"inline-block", color:"white"}}>⟳</div>
+                <div style={{fontSize:52,animation:"spinCW 3s linear infinite",display:"inline-block",color:"white"}}>⟳</div>
                 <div style={{fontFamily:"Syne,sans-serif",fontSize:18,fontWeight:700,color:"#c8e0ff"}}>Rotate your phone</div>
                 <div style={{fontFamily:"DM Mono,monospace",fontSize:12,color:"rgba(120,170,255,0.45)",lineHeight:1.7}}>
                   Market charts require<br/>landscape orientation

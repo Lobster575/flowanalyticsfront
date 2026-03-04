@@ -701,7 +701,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
           fontFamily:"DM Mono,monospace",fontSize:13,fontWeight:300,
           color:"rgba(120,170,255,0.5)",letterSpacing:"0.18em",
         }}>
-          // real-time p2p intelligence
+          // P2P monitor by Lobster
         </div>
 
         {/* Loading bar */}
@@ -864,14 +864,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
           .ex-tab{padding:7px 13px;border-radius:10px;border:1.5px solid rgba(70,120,220,0.14);background:rgba(6,14,36,0.5);cursor:pointer;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:rgba(120,170,255,0.35);transition:all .2s;display:flex;align-items:center;gap:6px;}
           .ex-tab.active{background:rgba(10,24,72,0.85);border-color:rgba(90,150,255,0.35);color:#d8ecff;}
           .ex-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
-          .controls{padding:12px 15px;display:flex;flex-direction:column;gap:8px;margin-bottom:12px;}
-          .ctrl-row{display:flex;align-items:center;gap:7px;flex-wrap:nowrap;}
-          .ctrl-row-main{flex-wrap:wrap;}
-          .ctrl-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:rgba(80,130,255,0.35);white-space:nowrap;flex-shrink:0;}
-          .ctrl-sep{font-family:'DM Mono',monospace;font-size:14px;color:rgba(80,130,255,0.25);flex-shrink:0;}
-          .live-btn{display:flex;align-items:center;gap:5px;padding:4px 8px;border-radius:8px;border:none;cursor:pointer;transition:all .2s;}
-          .desktop-only{display:flex;}
-          .mobile-only{display:none;}
+          .controls{padding:12px 15px;display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-bottom:12px;}
           .sel-wrap{position:relative;}
           .sel-wrap select{appearance:none;background:rgba(4,10,26,0.88);border:1.5px solid rgba(70,120,220,0.18);color:#b8d4ff;font-family:'DM Mono',monospace;font-size:12px;font-weight:500;padding:7px 26px 7px 10px;border-radius:10px;cursor:pointer;outline:none;transition:border-color .2s;}
           .sel-wrap select:hover{border-color:rgba(70,120,220,0.4);}
@@ -922,19 +915,15 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
           .divider{width:1px;height:15px;background:rgba(60,100,200,0.14);}
           /* Mobile */
           @media(max-width:640px){
-            .wrapper{overflow-x:hidden;}
+            .wrapper { overflow-x: hidden; }
             .bg-orb{display:none;}
             .glass-strong{border-radius:14px;}
-            .controls{padding:12px 13px;gap:9px;}
-            .ctrl-row{gap:6px;}
-            .ctrl-row-main{flex-wrap:nowrap;}
-            .sel-wrap select{font-size:11px;padding:6px 20px 6px 8px;}
-            .side-btn{padding:6px 10px;font-size:11px;}
-            .sort-btn,.rf-btn{padding:5px 8px;font-size:9px;}
+            .controls{padding:10px 12px;gap:6px;}
+            .sel-wrap select{font-size:11px;padding:7px 22px 7px 9px;}
+            .side-btn{padding:7px 11px;font-size:11px;}
+            .sort-btn,.rf-btn{padding:5px 7px;font-size:9px;}
             .divider{display:none;}
-            .meta{margin-left:0;align-items:center;}
-            .desktop-only{display:none !important;}
-            .mobile-only{display:flex !important;}
+            .meta{margin-left:0;width:100%;justify-content:flex-end;}
             /* hide desktop table on mobile */
             .desktop-table{display:none !important;}
             /* show cards on mobile */
@@ -969,7 +958,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
                 display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
                 minHeight:"60vh",gap:20,padding:32,textAlign:"center",
               }}>
-                <div style={{fontSize:52,animation:"spinCW 3s linear infinite",display:"inline-block"}}>⟳</div>
+                <div style={{fontSize:52, animation:"spinCW 3s linear infinite", display:"inline-block", color:"white"}}>⟳</div>
                 <div style={{fontFamily:"Syne,sans-serif",fontSize:18,fontWeight:700,color:"#c8e0ff"}}>Rotate your phone</div>
                 <div style={{fontFamily:"DM Mono,monospace",fontSize:12,color:"rgba(120,170,255,0.45)",lineHeight:1.7}}>
                   Market charts require<br/>landscape orientation
@@ -985,87 +974,75 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
               ))}
             </div>
 
-            {/* ── Controls: desktop flat row / mobile grid ── */}
             <div className="glass-strong controls">
-
-              {/* ROW 1: pair + side + live (always visible) */}
-              <div className="ctrl-row ctrl-row-main">
-                <div className="sel-wrap">
-                  <select value={fiat} onChange={e=>setFiat(e.target.value)}>
-                    <optgroup label="Fiat">{FIATS.map(f=><option key={f}>{f}</option>)}</optgroup>
-                    <optgroup label="Crypto">{CRYPTOS.map(c=><option key={c}>{c}</option>)}</optgroup>
-                  </select>
-                </div>
-                <span className="ctrl-sep">/</span>
-                <div className="sel-wrap">
-                  <select value={crypto} onChange={e=>setCrypto(e.target.value)}>
-                    <optgroup label="Crypto">{CRYPTOS.map(c=><option key={c}>{c}</option>)}</optgroup>
-                    <optgroup label="Fiat">{FIATS.map(f=><option key={f}>{f}</option>)}</optgroup>
-                  </select>
-                </div>
-                <div className="divider"/>
-                <div className="side-toggle">
-                  {["BUY","SELL"].map(s=>(
-                    <button key={s} className={`side-btn ${side===s?(s==="BUY"?"buy-active":"sell-active"):""}`} onClick={()=>setSide(s)}>{s}</button>
+              <div className="sel-wrap">
+                <select value={fiat} onChange={e=>setFiat(e.target.value)}>
+                  <optgroup label="Fiat">{FIATS.map(f=><option key={f}>{f}</option>)}</optgroup>
+                  <optgroup label="Crypto">{CRYPTOS.map(c=><option key={c}>{c}</option>)}</optgroup>
+                </select>
+              </div>
+              <div className="divider"/>
+              <div className="sel-wrap">
+                <select value={crypto} onChange={e=>setCrypto(e.target.value)}>
+                  <optgroup label="Crypto">{CRYPTOS.map(c=><option key={c}>{c}</option>)}</optgroup>
+                  <optgroup label="Fiat">{FIATS.map(f=><option key={f}>{f}</option>)}</optgroup>
+                </select>
+              </div>
+              <div className="divider"/>
+              <div className="side-toggle">
+                {["BUY","SELL"].map(s=>(
+                  <button key={s} className={`side-btn ${side===s?(s==="BUY"?"buy-active":"sell-active"):""}`} onClick={()=>setSide(s)}>{s}</button>
+                ))}
+              </div>
+              <div className="divider"/>
+              <div className="sort-tabs">
+                {SORT_OPTIONS.map(o=>(
+                  <button key={o.id} className={`sort-btn ${sort===o.id?"active":""}`} onClick={()=>setSort(o.id)}>{o.label}</button>
+                ))}
+              </div>
+              <div className="divider"/>
+              <div className="rate-filter">
+                {RATE_FILTERS.map(r=>(
+                  <button key={r.id} className={`rf-btn ${minRate===r.id?"active":""}`} onClick={()=>setMinRate(r.id)}>{r.label}</button>
+                ))}
+              </div>
+              <div className="divider"/>
+              {/* Payment filter */}
+              <div className="sel-wrap">
+                <select value={paymentFilter} onChange={e=>setPaymentFilter(e.target.value)}>
+                  <option value="">All payments</option>
+                  {availablePayments.filter(p=>p).map(pm=>(
+                    <option key={pm} value={pm}>{pm}</option>
                   ))}
-                </div>
-                <div className="divider desktop-only"/>
-                {/* Live — desktop only here */}
-                <div className="meta desktop-only">
-                  <button onClick={()=>setLiveMode(l=>!l)} className="live-btn" style={{background:liveMode?"rgba(38,166,154,0.12)":"rgba(60,80,150,0.12)"}}>
-                    <span style={{width:6,height:6,borderRadius:"50%",flexShrink:0,background:liveMode?"#26a69a":"rgba(120,150,255,0.3)",boxShadow:liveMode?"0 0 6px #26a69a":"none",animation:liveMode?"pulse 1.6s infinite":"none"}}/>
-                    <span style={{fontFamily:"DM Mono,monospace",fontSize:9,letterSpacing:"0.1em",color:liveMode?"#26a69a":"rgba(100,140,255,0.35)",fontWeight:600}}>{liveMode?"LIVE":"OFF"}</span>
-                  </button>
-                  <LiveDot lastUpdated={lastUpdated}/>
-                  {liveMode&&<div className="countdown"><svg width="26" height="26" viewBox="0 0 32 32">
+                </select>
+              </div>
+              <div className="meta">
+                {/* Live toggle */}
+                <button onClick={()=>setLiveMode(l=>!l)} style={{
+                  display:"flex",alignItems:"center",gap:5,
+                  padding:"4px 8px",borderRadius:8,border:"none",cursor:"pointer",
+                  background:liveMode?"rgba(38,166,154,0.12)":"rgba(60,80,150,0.12)",
+                  transition:"all .2s",
+                }}>
+                  <span style={{
+                    width:6,height:6,borderRadius:"50%",flexShrink:0,
+                    background:liveMode?"#26a69a":"rgba(120,150,255,0.3)",
+                    boxShadow:liveMode?"0 0 6px #26a69a":"none",
+                    animation:liveMode?"pulse 1.6s infinite":"none",
+                  }}/>
+                  <span style={{fontFamily:"DM Mono,monospace",fontSize:9,letterSpacing:"0.1em",
+                    color:liveMode?"#26a69a":"rgba(100,140,255,0.35)",fontWeight:600}}>
+                    {liveMode?"LIVE":"OFF"}
+                  </span>
+                </button>
+                <LiveDot lastUpdated={lastUpdated}/>
+                {liveMode&&<div className="countdown">
+                  <svg width="26" height="26" viewBox="0 0 32 32">
                     <circle className="countdown-track" cx="16" cy="16" r="14"/>
                     <circle className="countdown-fill" cx="16" cy="16" r="14" style={{strokeDashoffset:88-(countdown/TTL)*88}}/>
-                  </svg></div>}
-                </div>
+                  </svg>
+                </div>}
               </div>
-
-              {/* ROW 2: sort + rate (always) */}
-              <div className="ctrl-row ctrl-row-filters">
-                <div className="ctrl-label">Sort</div>
-                <div className="sort-tabs">
-                  {SORT_OPTIONS.map(o=>(
-                    <button key={o.id} className={`sort-btn ${sort===o.id?"active":""}`} onClick={()=>setSort(o.id)}>{o.label}</button>
-                  ))}
-                </div>
-                <div className="divider"/>
-                <div className="ctrl-label">Rate</div>
-                <div className="rate-filter">
-                  {RATE_FILTERS.map(r=>(
-                    <button key={r.id} className={`rf-btn ${minRate===r.id?"active":""}`} onClick={()=>setMinRate(r.id)}>{r.label}</button>
-                  ))}
-                </div>
-              </div>
-
-              {/* ROW 3: payment + live (mobile splits live here) */}
-              <div className="ctrl-row ctrl-row-payment">
-                <div className="ctrl-label">Pay</div>
-                <div className="sel-wrap" style={{flex:1}}>
-                  <select value={paymentFilter} onChange={e=>setPaymentFilter(e.target.value)}>
-                    <option value="">All methods</option>
-                    {availablePayments.filter(p=>p).map(pm=>(
-                      <option key={pm} value={pm}>{pm}</option>
-                    ))}
-                  </select>
-                </div>
-                {/* Live — mobile only here */}
-                <div className="meta mobile-only" style={{marginLeft:"auto"}}>
-                  <button onClick={()=>setLiveMode(l=>!l)} className="live-btn" style={{background:liveMode?"rgba(38,166,154,0.12)":"rgba(60,80,150,0.12)"}}>
-                    <span style={{width:6,height:6,borderRadius:"50%",flexShrink:0,background:liveMode?"#26a69a":"rgba(120,150,255,0.3)",boxShadow:liveMode?"0 0 6px #26a69a":"none",animation:liveMode?"pulse 1.6s infinite":"none"}}/>
-                    <span style={{fontFamily:"DM Mono,monospace",fontSize:9,letterSpacing:"0.1em",color:liveMode?"#26a69a":"rgba(100,140,255,0.35)",fontWeight:600}}>{liveMode?"LIVE":"OFF"}</span>
-                  </button>
-                  <LiveDot lastUpdated={lastUpdated}/>
-                  {liveMode&&<div className="countdown"><svg width="26" height="26" viewBox="0 0 32 32">
-                    <circle className="countdown-track" cx="16" cy="16" r="14"/>
-                    <circle className="countdown-fill" cx="16" cy="16" r="14" style={{strokeDashoffset:88-(countdown/TTL)*88}}/>
-                  </svg></div>}
-                </div>
-              </div>
-
             </div>
 
             {!loading&&displayOffers.length>0&&<Calculator offers={displayOffers} side={side} fiat={fiat} crypto={crypto}/>}

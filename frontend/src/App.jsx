@@ -264,12 +264,12 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
     const pct=spread.spread_pct
     const pctColor=pct>1?"#3dffa0":pct>0?"#f0b90b":"#ef5350"
     const SideCard=({label,price,currency,advertiser,exchange,url,accentColor})=>(
-      <div style={{flex:1,minWidth:0,background:"rgba(4,10,28,0.5)",borderRadius:12,padding:"12px 14px",border:`1px solid ${accentColor}22`,display:"flex",flexDirection:"column",gap:6}}>
+      <div style={{flex:1,minWidth:"120px",background:"rgba(4,10,28,0.5)",borderRadius:12,padding:"10px 12px",border:`1px solid ${accentColor}22`,display:"flex",flexDirection:"column",gap:5}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
           <span style={{fontFamily:"DM Mono,monospace",fontSize:8,letterSpacing:"0.18em",textTransform:"uppercase",color:`${accentColor}99`}}>{label}</span>
           <span style={{fontFamily:"DM Mono,monospace",fontSize:8,color:"rgba(100,140,255,0.35)",background:"rgba(80,120,255,0.08)",padding:"2px 7px",borderRadius:20,border:"1px solid rgba(80,120,255,0.1)"}}>{exchange}</span>
         </div>
-        <div style={{fontFamily:"DM Mono,monospace",fontSize:22,fontWeight:800,color:accentColor,lineHeight:1}}>
+        <div style={{fontFamily:"DM Mono,monospace",fontSize:"clamp(16px,4vw,22px)",fontWeight:800,color:accentColor,lineHeight:1}}>
           {price.toFixed(3)}
           <span style={{fontSize:11,fontWeight:400,color:"rgba(180,210,255,0.5)",marginLeft:5}}>{currency}</span>
         </div>
@@ -309,8 +309,8 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
             {pct>0?"+":""}{pct}%
           </div>
         </div>
-        {/* Cards row */}
-        <div style={{display:"flex",alignItems:"stretch",gap:8}}>
+        {/* Cards row - flex-wrap on mobile */}
+        <div style={{display:"flex",alignItems:"stretch",gap:8,flexWrap:"wrap"}}>
           <SideCard
             label="Buy"
             price={spread.buy_price}
@@ -342,67 +342,62 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 
   // ─── Market Sentiment ─────────────────────────────────────────────────────────
   function MarketSentiment(){
-    const [data,setData]=useState(null)
-    const [collapsed,setCollapsed]=useState(false)
+    const [coins,setCoins]=useState([])
+    const [collapsed,setCollapsed]=useState(true)
     useEffect(()=>{
       const load=async()=>{
         try{
           const res=await fetch("https://flowanalytics-production.up.railway.app/market/trending")
           const json=await res.json()
-          const coins=json.data||[]
-          const btc=coins.find(c=>c.symbol==="BTC"||c.symbol==="BTCUSDT")
-          const eth=coins.find(c=>c.symbol==="ETH"||c.symbol==="ETHUSDT")
-          const usdt=coins.find(c=>c.symbol==="USDT"||c.symbol==="USDTUSDC")
-          setData({
-            btc:  btc  ? parseFloat(btc.change_24h  || btc.priceChangePercent  || 0) : null,
-            eth:  eth  ? parseFloat(eth.change_24h  || eth.priceChangePercent  || 0) : null,
-            usdt: usdt ? parseFloat(usdt.change_24h || usdt.priceChangePercent || 0) : null,
-            coins: coins.slice(0,6),
-          })
+          const raw=json.data||[]
+          // Normalize: pick the change field whichever name the API uses
+          const parsed=raw.slice(0,8).map(c=>({
+            symbol:(c.symbol||c.name||"").replace(/USDT$/,"").replace(/BUSD$/,""),
+            chg: parseFloat(c.price_change_percent ?? c.priceChangePercent ?? c.change_24h ?? c.change ?? 0),
+          })).filter(c=>c.symbol)
+          setCoins(parsed)
         }catch(e){}
       }
       load();const iv=setInterval(load,60000);return()=>clearInterval(iv)
     },[])
-    const Ticker=({label,value,prefix=""})=>{
-      if(value===null)return null
-      const up=value>=0
+
+    // headline tickers (BTC, ETH, first stablecoin)
+    const btc=coins.find(c=>c.symbol==="BTC")
+    const eth=coins.find(c=>c.symbol==="ETH")
+    const stable=coins.find(c=>["USDC","USDT","DAI"].includes(c.symbol))
+
+    const Chip=({label,chg})=>{
+      const up=chg>=0
       const col=up?"#26a69a":"#ef5350"
       return(
-        <div style={{display:"flex",alignItems:"center",gap:5,padding:"5px 10px",borderRadius:8,background:up?"rgba(38,166,154,0.07)":"rgba(239,83,80,0.07)",border:`1px solid ${col}22`}}>
-          <span style={{fontFamily:"DM Mono,monospace",fontSize:10,color:"rgba(180,210,255,0.55)",fontWeight:500}}>{label}</span>
-          <span style={{fontFamily:"DM Mono,monospace",fontSize:11,fontWeight:700,color:col}}>{prefix}{up?"+":""}{value.toFixed(2)}%</span>
+        <div style={{display:"flex",alignItems:"center",gap:4,padding:"4px 8px",borderRadius:7,
+          background:up?"rgba(38,166,154,0.08)":"rgba(239,83,80,0.08)",
+          border:`1px solid ${col}25`,flexShrink:0}}>
+          <span style={{fontFamily:"DM Mono,monospace",fontSize:10,color:"rgba(180,210,255,0.55)"}}>{label}</span>
+          <span style={{fontFamily:"DM Mono,monospace",fontSize:10,fontWeight:700,color:col}}>{up?"+":""}{chg.toFixed(2)}%</span>
         </div>
       )
     }
     return(
       <div className="glass-strong" style={{marginBottom:13,overflow:"hidden"}}>
-        <div onClick={()=>setCollapsed(c=>!c)} style={{padding:"10px 14px",display:"flex",alignItems:"center",gap:8,cursor:"pointer",userSelect:"none"}}>
-          <span style={{fontSize:8,letterSpacing:"0.18em",textTransform:"uppercase",color:"rgba(120,170,255,0.45)",fontFamily:"DM Mono,monospace"}}>📊 Market Sentiment</span>
-          <div style={{flex:1,height:1,background:"rgba(80,130,255,0.08)"}}/>
-          {!collapsed&&data&&(
-            <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
-              <Ticker label="BTC" value={data.btc}/>
-              <Ticker label="ETH" value={data.eth}/>
-              {data.usdt!==null&&<Ticker label="USDT premium" value={data.usdt} prefix=""/>}
-            </div>
-          )}
-          <span style={{fontFamily:"DM Mono,monospace",fontSize:9,color:"rgba(80,130,255,0.3)",marginLeft:6,flexShrink:0,transition:"transform .2s",transform:collapsed?"rotate(180deg)":"rotate(0deg)"}}>▲</span>
+        {/* Header — always visible, click to toggle */}
+        <div onClick={()=>setCollapsed(c=>!c)}
+          style={{padding:"10px 14px",display:"flex",alignItems:"center",gap:8,cursor:"pointer",userSelect:"none",flexWrap:"nowrap",overflow:"hidden"}}>
+          <span style={{fontSize:8,letterSpacing:"0.16em",textTransform:"uppercase",color:"rgba(120,170,255,0.45)",fontFamily:"DM Mono,monospace",flexShrink:0}}>📊 Sentiment</span>
+          <div style={{flex:1,height:1,background:"rgba(80,130,255,0.08)",minWidth:4}}/>
+          {/* Show 2-3 headline chips inline when collapsed */}
+          <div style={{display:"flex",gap:5,alignItems:"center",flexShrink:0}}>
+            {btc&&<Chip label="BTC" chg={btc.chg}/>}
+            {eth&&<Chip label="ETH" chg={eth.chg}/>}
+            {stable&&<Chip label={stable.symbol} chg={stable.chg}/>}
+          </div>
+          <span style={{fontFamily:"DM Mono,monospace",fontSize:9,color:"rgba(80,130,255,0.3)",marginLeft:4,flexShrink:0,
+            transition:"transform .2s",transform:collapsed?"rotate(0deg)":"rotate(180deg)"}}>▼</span>
         </div>
-        {!collapsed&&data&&(
-          <div style={{padding:"0 14px 12px",display:"flex",gap:6,flexWrap:"wrap"}}>
-            {data.coins.map((c,i)=>{
-              const chg=parseFloat(c.change_24h||c.priceChangePercent||0)
-              const up=chg>=0
-              const col=up?"#26a69a":"#ef5350"
-              const sym=(c.symbol||"").replace("USDT","")
-              if(!sym)return null
-              return(
-                <div key={i} style={{display:"flex",alignItems:"center",gap:5,padding:"4px 9px",borderRadius:7,background:"rgba(4,10,28,0.5)",border:"1px solid rgba(80,130,255,0.1)"}}>
-                  <span style={{fontFamily:"DM Mono,monospace",fontSize:10,color:"rgba(180,210,255,0.6)"}}>{sym}</span>
-                  <span style={{fontFamily:"DM Mono,monospace",fontSize:10,fontWeight:700,color:col}}>{up?"+":""}{chg.toFixed(2)}%</span>
-                </div>
-              )
-            })}
+        {/* Expanded: all coins grid */}
+        {!collapsed&&(
+          <div style={{padding:"2px 14px 12px",display:"flex",gap:6,flexWrap:"wrap"}}>
+            {coins.map((c,i)=><Chip key={i} label={c.symbol} chg={c.chg}/>)}
           </div>
         )}
       </div>
@@ -424,9 +419,15 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
     }):null
     const effP=best?(side==="BUY"?best.price*(1+(best.commission||0)/100):best.price*(1-(best.commission||0)/100)):null
     const result=effP&&num?(side==="BUY"?num/effP:num*effP):null
+    const [calcOpen,setCalcOpen]=useState(true)
     return(
-      <div className="glass-strong" style={{padding:"15px 16px",marginBottom:13}}>
-        <div style={{fontSize:10,letterSpacing:"0.18em",textTransform:"uppercase",color:"rgba(120,170,255,0.45)",fontFamily:"DM Mono,monospace",marginBottom:11}}>Quick Calculator</div>
+      <div className="glass-strong" style={{marginBottom:13,overflow:"hidden"}}>
+        <div onClick={()=>setCalcOpen(o=>!o)} style={{padding:"10px 16px",display:"flex",alignItems:"center",gap:8,cursor:"pointer",userSelect:"none"}}>
+          <span style={{fontSize:8,letterSpacing:"0.18em",textTransform:"uppercase",color:"rgba(120,170,255,0.45)",fontFamily:"DM Mono,monospace"}}>⚡ Quick Calculator</span>
+          <div style={{flex:1,height:1,background:"rgba(80,130,255,0.08)"}}/>
+          <span style={{fontFamily:"DM Mono,monospace",fontSize:9,color:"rgba(80,130,255,0.3)",transition:"transform .2s",transform:calcOpen?"rotate(180deg)":"rotate(0deg)"}}>▼</span>
+        </div>
+        {calcOpen&&<div style={{padding:"0 16px 15px"}}>
         <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
           <div style={{flex:1,minWidth:120,display:"flex"}}>
             <input type="number" value={amount} onChange={e=>setAmount(e.target.value)} placeholder="0.00"
@@ -453,6 +454,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
             {offers.length>0&&` — range: ${offers[0].min_amount.toLocaleString()}–${Math.max(...offers.map(o=>o.max_amount)).toLocaleString()}`}
           </div>
         )}
+        </div>}
         {best&&result&&!outOfRange&&(
           <div style={{marginTop:8,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
             <span style={{fontFamily:"DM Mono,monospace",fontSize:10,color:"rgba(100,150,255,0.4)"}}>via</span>
@@ -976,8 +978,6 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
           .ctrl-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:rgba(80,130,255,0.35);white-space:nowrap;flex-shrink:0;}
           .ctrl-sep{font-family:'DM Mono',monospace;font-size:14px;color:rgba(80,130,255,0.25);flex-shrink:0;}
           .live-btn{display:flex;align-items:center;gap:5px;padding:4px 8px;border-radius:8px;border:none;cursor:pointer;transition:all .2s;}
-          .desktop-only{display:flex;}
-          .mobile-only{display:none;}
           .sel-wrap{position:relative;}
           .sel-wrap select{appearance:none;background:rgba(4,10,26,0.88);border:1.5px solid rgba(70,120,220,0.18);color:#b8d4ff;font-family:'DM Mono',monospace;font-size:12px;font-weight:500;padding:7px 26px 7px 10px;border-radius:10px;cursor:pointer;outline:none;transition:border-color .2s;}
           .sel-wrap select:hover{border-color:rgba(70,120,220,0.4);}
@@ -1028,22 +1028,17 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
           .divider{width:1px;height:15px;background:rgba(60,100,200,0.14);}
           /* Mobile */
           @media(max-width:640px){
-            .wrapper{overflow-x:hidden;}
+            .wrapper{overflow-x:hidden;padding:20px 12px 60px;}
             .bg-orb{display:none;}
             .glass-strong{border-radius:14px;}
-            .controls{padding:12px 13px;gap:9px;}
-            .ctrl-row{gap:6px;}
-            .ctrl-row-main{flex-wrap:nowrap;}
-            .sel-wrap select{font-size:11px;padding:6px 20px 6px 8px;}
+            .controls{padding:10px 12px;gap:8px;}
+            .ctrl-row{gap:5px;flex-wrap:wrap;}
+            .sel-wrap select{font-size:11px;padding:6px 18px 6px 8px;}
             .side-btn{padding:6px 10px;font-size:11px;}
-            .sort-btn,.rf-btn{padding:5px 8px;font-size:9px;}
+            .sort-btn,.rf-btn{padding:5px 7px;font-size:9px;}
             .divider{display:none;}
-            .meta{margin-left:0;align-items:center;}
-            .desktop-only{display:none !important;}
-            .mobile-only{display:flex !important;}
-            /* hide desktop table on mobile */
+            .meta{align-items:center;}
             .desktop-table{display:none !important;}
-            /* show cards on mobile */
             .mobile-cards{display:block !important;}
           }
           @media(min-width:641px){
@@ -1091,11 +1086,9 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
               ))}
             </div>
 
-            {/* ── Controls: desktop flat row / mobile grid ── */}
             <div className="glass-strong controls">
-
-              {/* ROW 1: pair + side + live (always visible) */}
-              <div className="ctrl-row ctrl-row-main">
+              {/* ROW 1: pair + side */}
+              <div className="ctrl-row">
                 <div className="sel-wrap">
                   <select value={fiat} onChange={e=>setFiat(e.target.value)}>
                     <optgroup label="Fiat">{FIATS.map(f=><option key={f}>{f}</option>)}</optgroup>
@@ -1109,15 +1102,13 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
                     <optgroup label="Fiat">{FIATS.map(f=><option key={f}>{f}</option>)}</optgroup>
                   </select>
                 </div>
-                <div className="divider"/>
-                <div className="side-toggle">
+                <div className="side-toggle" style={{marginLeft:4}}>
                   {["BUY","SELL"].map(s=>(
                     <button key={s} className={`side-btn ${side===s?(s==="BUY"?"buy-active":"sell-active"):""}`} onClick={()=>setSide(s)}>{s}</button>
                   ))}
                 </div>
-                <div className="divider desktop-only"/>
-                {/* Live — desktop only here */}
-                <div className="meta desktop-only">
+                {/* LIVE — single button, always row 1 end */}
+                <div className="meta" style={{marginLeft:"auto"}}>
                   <button onClick={()=>setLiveMode(l=>!l)} className="live-btn" style={{background:liveMode?"rgba(38,166,154,0.12)":"rgba(60,80,150,0.12)"}}>
                     <span style={{width:6,height:6,borderRadius:"50%",flexShrink:0,background:liveMode?"#26a69a":"rgba(120,150,255,0.3)",boxShadow:liveMode?"0 0 6px #26a69a":"none",animation:liveMode?"pulse 1.6s infinite":"none"}}/>
                     <span style={{fontFamily:"DM Mono,monospace",fontSize:9,letterSpacing:"0.1em",color:liveMode?"#26a69a":"rgba(100,140,255,0.35)",fontWeight:600}}>{liveMode?"LIVE":"OFF"}</span>
@@ -1129,9 +1120,8 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
                   </svg></div>}
                 </div>
               </div>
-
-              {/* ROW 2: sort + rate (always) */}
-              <div className="ctrl-row ctrl-row-filters">
+              {/* ROW 2: sort + rate */}
+              <div className="ctrl-row" style={{flexWrap:"wrap"}}>
                 <div className="ctrl-label">Sort</div>
                 <div className="sort-tabs">
                   {SORT_OPTIONS.map(o=>(
@@ -1146,9 +1136,8 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
                   ))}
                 </div>
               </div>
-
-              {/* ROW 3: payment + live (mobile splits live here) */}
-              <div className="ctrl-row ctrl-row-payment">
+              {/* ROW 3: payment */}
+              <div className="ctrl-row">
                 <div className="ctrl-label">Pay</div>
                 <div className="sel-wrap" style={{flex:1}}>
                   <select value={paymentFilter} onChange={e=>setPaymentFilter(e.target.value)}>
@@ -1158,20 +1147,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
                     ))}
                   </select>
                 </div>
-                {/* Live — mobile only here */}
-                <div className="meta mobile-only" style={{marginLeft:"auto"}}>
-                  <button onClick={()=>setLiveMode(l=>!l)} className="live-btn" style={{background:liveMode?"rgba(38,166,154,0.12)":"rgba(60,80,150,0.12)"}}>
-                    <span style={{width:6,height:6,borderRadius:"50%",flexShrink:0,background:liveMode?"#26a69a":"rgba(120,150,255,0.3)",boxShadow:liveMode?"0 0 6px #26a69a":"none",animation:liveMode?"pulse 1.6s infinite":"none"}}/>
-                    <span style={{fontFamily:"DM Mono,monospace",fontSize:9,letterSpacing:"0.1em",color:liveMode?"#26a69a":"rgba(100,140,255,0.35)",fontWeight:600}}>{liveMode?"LIVE":"OFF"}</span>
-                  </button>
-                  <LiveDot lastUpdated={lastUpdated}/>
-                  {liveMode&&<div className="countdown"><svg width="26" height="26" viewBox="0 0 32 32">
-                    <circle className="countdown-track" cx="16" cy="16" r="14"/>
-                    <circle className="countdown-fill" cx="16" cy="16" r="14" style={{strokeDashoffset:88-(countdown/TTL)*88}}/>
-                  </svg></div>}
-                </div>
               </div>
-
             </div>
 
             <MarketSentiment/>

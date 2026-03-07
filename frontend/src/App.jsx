@@ -1365,6 +1365,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
           .desktop-only-flex{display:flex;}
           .desktop-only-block{display:block;}
           .mobile-only-block{display:none;}
+          .mobile-only-flex{display:none;}
           @media(max-width:640px){
             .wrapper{overflow-x:hidden;padding:16px 12px 80px;}
             .bg-orb{display:none;}
@@ -1381,10 +1382,12 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
             .desktop-only-flex{display:none !important;}
             .desktop-only-block{display:none !important;}
             .mobile-only-block{display:block !important;}
+            .mobile-only-flex{display:flex !important;}
           }
           @media(min-width:641px){
             .mobile-cards{display:none !important;}
             .mobile-only-block{display:none !important;}
+            .mobile-only-flex{display:none !important;}
           }
           @media(max-width:400px){
             .title{font-size:22px;}
@@ -1615,26 +1618,27 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
         </div>
 
         {/* Bottom navigation — mobile only */}
-        <nav style={{
-          position:"fixed",bottom:0,left:0,right:0,zIndex:100,
-          background:"rgba(4,10,28,0.95)",backdropFilter:"blur(20px)",
-          borderTop:"1px solid rgba(70,120,220,0.18)",
-          display:"flex",alignItems:"stretch",
-          height:60,
-        }} className="mobile-only-block">
+        <nav className="mobile-only-flex" style={{
+          position:"fixed",bottom:0,left:0,right:0,zIndex:200,
+          background:"rgba(4,10,28,0.97)",backdropFilter:"blur(24px)",WebkitBackdropFilter:"blur(24px)",
+          borderTop:"1px solid rgba(70,120,220,0.2)",
+          alignItems:"stretch",height:56,
+          paddingBottom:"env(safe-area-inset-bottom,0px)",
+        }}>
           {[
-            {id:"p2p", icon:"⇄", label:t("p2p")},
-            {id:"market", icon:"◳", label:t("market")},
+            {id:"p2p", icon:"P2P", label:t("p2p"), svg:<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 7h14M7 3l-4 4 4 4M13 17l4-4-4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>},
+            {id:"market", icon:"◳", label:t("market"), svg:<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polyline points="2,14 7,9 11,12 18,5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>},
           ].map(tab=>(
             <button key={tab.id} onClick={()=>setMode(tab.id)} style={{
               flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
-              gap:3,border:"none",cursor:"pointer",background:"transparent",
-              color:mode===tab.id?"#26a69a":"rgba(100,150,255,0.35)",
-              fontFamily:"DM Mono,monospace",transition:"all .2s",
+              gap:4,border:"none",cursor:"pointer",background:"transparent",padding:0,
+              color:mode===tab.id?"#26a69a":"rgba(100,150,255,0.3)",
+              fontFamily:"DM Mono,monospace",fontWeight:700,transition:"color .2s",
               borderTop:mode===tab.id?"2px solid #26a69a":"2px solid transparent",
+              minHeight:56,
             }}>
-              <span style={{fontSize:18,lineHeight:1}}>{tab.icon}</span>
-              <span style={{fontSize:9,letterSpacing:"0.1em",textTransform:"uppercase",fontWeight:600}}>{tab.label}</span>
+              <span style={{display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>{tab.svg}</span>
+              <span style={{fontSize:8,letterSpacing:"0.12em",textTransform:"uppercase",marginTop:1}}>{tab.label}</span>
             </button>
           ))}
         </nav>

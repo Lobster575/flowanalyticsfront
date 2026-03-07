@@ -264,85 +264,364 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
     if(!spread)return null
     const pct=spread.spread_pct
     const pctColor=pct>1?"#3dffa0":pct>0?"#f0b90b":"#ef5350"
-    const SideCard=({label,price,currency,advertiser,exchange,url,accentColor})=>(
-      <div style={{flex:1,minWidth:"120px",background:"rgba(4,10,28,0.5)",borderRadius:12,padding:"10px 12px",border:`1px solid ${accentColor}22`,display:"flex",flexDirection:"column",gap:5}}>
+    const SideCard=({label,price,currency,advertiser,exchange,url,accentColor,bg})=>(
+      <div style={{flex:1,minWidth:0,background:bg,borderRadius:14,padding:"16px 16px 14px",border:`1.5px solid ${accentColor}30`,display:"flex",flexDirection:"column",gap:8}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-          <span style={{fontFamily:"DM Mono,monospace",fontSize:8,letterSpacing:"0.18em",textTransform:"uppercase",color:`${accentColor}99`}}>{label}</span>
-          <span style={{fontFamily:"DM Mono,monospace",fontSize:8,color:"rgba(100,140,255,0.35)",background:"rgba(80,120,255,0.08)",padding:"2px 7px",borderRadius:20,border:"1px solid rgba(80,120,255,0.1)"}}>{exchange}</span>
+          <span style={{fontFamily:"DM Mono,monospace",fontSize:9,letterSpacing:"0.2em",textTransform:"uppercase",color:`${accentColor}cc`,fontWeight:600}}>{label}</span>
+          <span style={{fontFamily:"DM Mono,monospace",fontSize:9,color:"rgba(100,140,255,0.4)",background:"rgba(80,120,255,0.08)",padding:"2px 8px",borderRadius:20,border:"1px solid rgba(80,120,255,0.12)"}}>{exchange}</span>
         </div>
-        <div style={{fontFamily:"DM Mono,monospace",fontSize:"clamp(16px,4vw,22px)",fontWeight:800,color:accentColor,lineHeight:1}}>
-          {price.toFixed(3)}
-          <span style={{fontSize:11,fontWeight:400,color:"rgba(180,210,255,0.5)",marginLeft:5}}>{currency}</span>
+        <div style={{fontFamily:"DM Mono,monospace",lineHeight:1}}>
+          <div style={{fontSize:"clamp(20px,5vw,28px)",fontWeight:800,color:accentColor,letterSpacing:"-0.02em"}}>{price.toFixed(3)}</div>
+          <div style={{fontSize:11,color:"rgba(180,210,255,0.4)",marginTop:3}}>{currency}</div>
         </div>
-        <div style={{display:"flex",alignItems:"center",gap:5,minWidth:0}}>
-          {url
-            ?<a href={url} target="_blank" rel="noreferrer" style={{fontFamily:"DM Mono,monospace",fontSize:11,color:"#5ba8ff",textDecoration:"none",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",display:"flex",alignItems:"center",gap:3}}>
-              <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{advertiser||exchange}</span>
-              <span style={{flexShrink:0,opacity:0.6,fontSize:9}}>↗</span>
-            </a>
-            :<span style={{fontFamily:"DM Mono,monospace",fontSize:11,color:"#5ba8ff",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{advertiser||exchange}</span>
-          }
+        <div style={{fontFamily:"DM Mono,monospace",fontSize:11,color:"rgba(140,180,255,0.55)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+          {advertiser||exchange}
         </div>
         {url&&(
           <a href={url} target="_blank" rel="noreferrer" style={{
-            marginTop:4,display:"inline-flex",alignItems:"center",justifyContent:"center",gap:4,
-            padding:"5px 10px",borderRadius:8,border:`1px solid ${accentColor}40`,
-            background:`${accentColor}0f`,color:accentColor,
-            fontFamily:"DM Mono,monospace",fontSize:10,fontWeight:600,
-            textDecoration:"none",transition:"all .18s",cursor:"pointer",
+            display:"flex",alignItems:"center",justifyContent:"center",gap:5,
+            padding:"10px 14px",borderRadius:10,border:`1.5px solid ${accentColor}50`,
+            background:`${accentColor}18`,color:accentColor,
+            fontFamily:"DM Mono,monospace",fontSize:11,fontWeight:700,
+            textDecoration:"none",transition:"all .18s",cursor:"pointer",minHeight:42,
           }}
-          onMouseEnter={e=>{e.currentTarget.style.background=`${accentColor}22`}}
-          onMouseLeave={e=>{e.currentTarget.style.background=`${accentColor}0f`}}>
+          onMouseEnter={e=>{e.currentTarget.style.background=`${accentColor}28`}}
+          onMouseLeave={e=>{e.currentTarget.style.background=`${accentColor}18`}}>
             View advertiser ↗
           </a>
         )}
       </div>
     )
     return(
-      <div style={{padding:"14px 14px 16px",borderBottom:"1px solid rgba(38,166,154,0.12)",background:"linear-gradient(135deg,rgba(38,166,154,0.05) 0%,rgba(4,10,28,0.0) 100%)"}}>
-        {/* Header row */}
-        <div onClick={()=>setCollapsed(c=>!c)} style={{display:"flex",alignItems:"center",gap:8,marginBottom:collapsed?0:12,cursor:"pointer",userSelect:"none"}}>
-          <span style={{fontSize:8,letterSpacing:"0.2em",textTransform:"uppercase",color:"rgba(38,166,154,0.55)",fontFamily:"DM Mono,monospace"}}>⚡ Best Spread</span>
+      <div style={{background:"linear-gradient(135deg,rgba(38,166,154,0.07) 0%,rgba(20,40,100,0.04) 100%)"}}>
+        {/* Header — click to collapse */}
+        <div onClick={()=>setCollapsed(c=>!c)} style={{padding:"14px 18px",display:"flex",alignItems:"center",gap:10,cursor:"pointer",userSelect:"none"}}>
+          <span style={{fontSize:8,letterSpacing:"0.22em",textTransform:"uppercase",color:"rgba(38,166,154,0.5)",fontFamily:"DM Mono,monospace"}}>⚡ Best Spread</span>
           <div style={{flex:1,height:1,background:"rgba(38,166,154,0.1)"}}/>
-          <div style={{fontFamily:"DM Mono,monospace",fontSize:13,fontWeight:800,color:pctColor,
-            background:`${pctColor}15`,padding:"2px 10px",borderRadius:20,border:`1px solid ${pctColor}30`,
-            boxShadow:`0 0 12px ${pctColor}20`,flexShrink:0}}>
+          <div style={{fontFamily:"DM Mono,monospace",fontSize:"clamp(16px,4vw,22px)",fontWeight:900,color:pctColor,
+            background:`${pctColor}18`,padding:"4px 14px",borderRadius:24,border:`1.5px solid ${pctColor}40`,
+            boxShadow:`0 0 18px ${pctColor}30`,letterSpacing:"-0.01em",flexShrink:0}}>
             {pct>0?"+":""}{pct}%
           </div>
-          <span style={{fontFamily:"DM Mono,monospace",fontSize:9,color:"rgba(80,130,255,0.3)",marginLeft:4,flexShrink:0,transition:"transform .2s",transform:collapsed?"rotate(0deg)":"rotate(180deg)"}}>▼</span>
+          <span style={{fontFamily:"DM Mono,monospace",fontSize:9,color:"rgba(80,130,255,0.3)",flexShrink:0,transition:"transform .25s",transform:collapsed?"rotate(0deg)":"rotate(180deg)"}}>▼</span>
         </div>
-        {/* Cards row - collapsible */}
-        {!collapsed&&<div style={{display:"flex",alignItems:"stretch",gap:8,flexWrap:"wrap"}}>
-          <SideCard
-            label="Buy"
-            price={spread.buy_price}
-            currency={spread.fiat}
-            advertiser={spread.buy_advertiser}
-            exchange={spread.buy_exchange}
-            url={spread.buy_url}
-            accentColor="#26a69a"
-          />
-          {/* Arrow center */}
-          <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4,padding:"0 2px",flexShrink:0}}>
-            <div style={{width:1,flex:1,background:"rgba(38,166,154,0.1)"}}/>
-            <div style={{width:28,height:28,borderRadius:"50%",background:"rgba(38,166,154,0.1)",border:"1px solid rgba(38,166,154,0.25)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:"rgba(38,166,154,0.7)",flexShrink:0}}>→</div>
-            <div style={{width:1,flex:1,background:"rgba(38,166,154,0.1)"}}/>
+        {/* Cards — collapsible */}
+        {!collapsed&&(
+          <div style={{padding:"0 14px 16px",display:"flex",gap:10,alignItems:"stretch"}}>
+            <SideCard label="BUY" price={spread.buy_price} currency={spread.fiat}
+              advertiser={spread.buy_advertiser} exchange={spread.buy_exchange} url={spread.buy_url}
+              accentColor="#26a69a" bg="rgba(38,166,154,0.06)"/>
+            <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:6,flexShrink:0,padding:"0 4px"}}>
+              <div style={{width:1,flex:1,background:"rgba(38,166,154,0.12)"}}/>
+              <div style={{width:32,height:32,borderRadius:"50%",background:"rgba(20,40,80,0.8)",border:"1.5px solid rgba(38,166,154,0.3)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,color:"#26a69a",flexShrink:0,boxShadow:"0 0 12px rgba(38,166,154,0.15)"}}>→</div>
+              <div style={{width:1,flex:1,background:"rgba(38,166,154,0.12)"}}/>
+            </div>
+            <SideCard label="SELL" price={spread.sell_price} currency={spread.crypto}
+              advertiser={spread.sell_advertiser} exchange={spread.sell_exchange} url={spread.sell_url}
+              accentColor="#4a9eff" bg="rgba(74,158,255,0.06)"/>
           </div>
-          <SideCard
-            label="Sell"
-            price={spread.sell_price}
-            currency={spread.crypto}
-            advertiser={spread.sell_advertiser}
-            exchange={spread.sell_exchange}
-            url={spread.sell_url}
-            accentColor="#4a9eff"
-          />
-        </div>}
+        )}
       </div>
     )
   }
 
-  // ─── Market Sentiment ─────────────────────────────────────────────────────────
+  // ─── Mobile Filter Panel ─────────────────────────────────────────────────────
+  function MobileFilters({fiat,setFiat,crypto,setCrypto,side,setSide,exchange,setExchange,
+    paymentFilter,setPaymentFilter,minRate,setMinRate,sort,setSort,availablePayments,
+    liveMode,setLiveMode,lastUpdated,countdown,TTL}){
+    const [open,setOpen]=useState(false)
+    const activeCount=[
+      paymentFilter?1:0,
+      minRate>0?1:0,
+      sort!=="price"?1:0,
+    ].reduce((a,b)=>a+b,0)
+
+    const Row=({label,children})=>(
+      <div style={{marginBottom:14}}>
+        <div style={{fontFamily:"DM Mono,monospace",fontSize:9,letterSpacing:"0.16em",textTransform:"uppercase",color:"rgba(80,130,255,0.4)",marginBottom:7}}>{label}</div>
+        {children}
+      </div>
+    )
+    const Sel=({value,onChange,children})=>(
+      <div style={{position:"relative"}}>
+        <select value={value} onChange={onChange} style={{
+          width:"100%",appearance:"none",background:"rgba(4,10,26,0.9)",
+          border:"1.5px solid rgba(70,120,220,0.2)",color:"#b8d4ff",
+          fontFamily:"DM Mono,monospace",fontSize:12,padding:"11px 32px 11px 12px",
+          borderRadius:10,outline:"none",cursor:"pointer",
+        }}>{children}</select>
+        <span style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",color:"rgba(70,120,220,0.5)",pointerEvents:"none",fontSize:10}}>▾</span>
+      </div>
+    )
+
+    return(
+      <div className="mobile-only-block" style={{marginBottom:12}}>
+        {/* Top bar: Filters btn + LIVE + countdown */}
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <button onClick={()=>setOpen(o=>!o)} style={{
+            flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:8,
+            padding:"13px 18px",borderRadius:13,cursor:"pointer",minHeight:48,
+            background:open?"rgba(90,150,255,0.14)":"rgba(8,16,42,0.7)",
+            border:`1.5px solid ${open?"rgba(90,150,255,0.4)":"rgba(70,120,220,0.18)"}`,
+            color:open?"#a8ccff":"rgba(120,170,255,0.6)",
+            fontFamily:"DM Mono,monospace",fontSize:12,fontWeight:700,
+            transition:"all .2s",
+          }}>
+            <span style={{fontSize:15}}>⚙</span>
+            Filters
+            {activeCount>0&&<span style={{
+              background:"#26a69a",color:"#040a18",borderRadius:"50%",
+              width:18,height:18,display:"flex",alignItems:"center",justifyContent:"center",
+              fontSize:9,fontWeight:800,flexShrink:0,
+            }}>{activeCount}</span>}
+            <span style={{marginLeft:"auto",fontSize:11,opacity:0.4,transition:"transform .2s",transform:open?"rotate(180deg)":"none"}}>▼</span>
+          </button>
+          {/* Live button */}
+          <button onClick={()=>setLiveMode(l=>!l)} style={{
+            display:"flex",alignItems:"center",gap:6,padding:"0 14px",
+            height:48,borderRadius:13,border:"1.5px solid",cursor:"pointer",
+            background:liveMode?"rgba(38,166,154,0.12)":"rgba(60,80,150,0.1)",
+            borderColor:liveMode?"rgba(38,166,154,0.35)":"rgba(70,120,220,0.18)",
+            flexShrink:0,
+          }}>
+            <span style={{width:7,height:7,borderRadius:"50%",background:liveMode?"#26a69a":"rgba(120,150,255,0.3)",boxShadow:liveMode?"0 0 6px #26a69a":"none",animation:liveMode?"pulse 1.6s infinite":"none"}}/>
+            <span style={{fontFamily:"DM Mono,monospace",fontSize:10,color:liveMode?"#26a69a":"rgba(100,140,255,0.35)",fontWeight:600}}>{liveMode?"LIVE":"OFF"}</span>
+          </button>
+          {liveMode&&<div className="countdown" style={{flexShrink:0}}><svg width="32" height="32" viewBox="0 0 32 32">
+            <circle className="countdown-track" cx="16" cy="16" r="14"/>
+            <circle className="countdown-fill" cx="16" cy="16" r="14" style={{strokeDashoffset:88-(countdown/TTL)*88}}/>
+          </svg></div>}
+        </div>
+
+        {/* Active filters summary chips */}
+        {!open&&(paymentFilter||minRate>0||sort!=="price")&&(
+          <div style={{display:"flex",flexWrap:"wrap",gap:5,marginTop:8}}>
+            {sort!=="price"&&<span style={{fontFamily:"DM Mono,monospace",fontSize:10,padding:"3px 10px",borderRadius:20,background:"rgba(38,166,154,0.1)",border:"1px solid rgba(38,166,154,0.25)",color:"#26a69a"}}>sort: {sort}</span>}
+            {minRate>0&&<span style={{fontFamily:"DM Mono,monospace",fontSize:10,padding:"3px 10px",borderRadius:20,background:"rgba(38,166,154,0.1)",border:"1px solid rgba(38,166,154,0.25)",color:"#26a69a"}}>rate ≥{minRate}%</span>}
+            {paymentFilter&&<span style={{fontFamily:"DM Mono,monospace",fontSize:10,padding:"3px 10px",borderRadius:20,background:"rgba(38,166,154,0.1)",border:"1px solid rgba(38,166,154,0.25)",color:"#26a69a"}}>{paymentFilter}</span>}
+          </div>
+        )}
+
+        {/* Dropdown panel */}
+        {open&&(
+          <div className="glass-strong" style={{marginTop:8,padding:"18px 16px 10px",overflow:"hidden"}}>
+            <Row label="Fiat Currency">
+              <Sel value={fiat} onChange={e=>setFiat(e.target.value)}>
+                {FIATS.map(f=><option key={f}>{f}</option>)}
+              </Sel>
+            </Row>
+            <Row label="Crypto">
+              <Sel value={crypto} onChange={e=>setCrypto(e.target.value)}>
+                {CRYPTOS.map(c=><option key={c}>{c}</option>)}
+              </Sel>
+            </Row>
+            <Row label="Side">
+              <div style={{display:"flex",gap:8}}>
+                {["BUY","SELL"].map(s=>(
+                  <button key={s} onClick={()=>setSide(s)} style={{
+                    flex:1,padding:"11px",borderRadius:10,border:"1.5px solid",cursor:"pointer",
+                    fontFamily:"DM Mono,monospace",fontSize:12,fontWeight:700,minHeight:44,
+                    background:side===s?(s==="BUY"?"rgba(38,166,154,0.15)":"rgba(239,83,80,0.12)"):"rgba(4,10,26,0.7)",
+                    borderColor:side===s?(s==="BUY"?"rgba(38,166,154,0.4)":"rgba(239,83,80,0.35)"):"rgba(70,120,220,0.18)",
+                    color:side===s?(s==="BUY"?"#3effc0":"#ff7878"):"rgba(120,170,255,0.4)",
+                  }}>{s}</button>
+                ))}
+              </div>
+            </Row>
+            <Row label="Exchange">
+              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                {EXCHANGES_CONFIG.map(ex=>(
+                  <button key={ex.id} onClick={()=>setExchange(ex.id)} style={{
+                    flex:1,padding:"10px",borderRadius:10,border:"1.5px solid",cursor:"pointer",
+                    fontFamily:"DM Mono,monospace",fontSize:11,fontWeight:600,minHeight:44,
+                    display:"flex",alignItems:"center",justifyContent:"center",gap:6,
+                    background:exchange===ex.id?"rgba(10,24,72,0.85)":"rgba(4,10,26,0.7)",
+                    borderColor:exchange===ex.id?"rgba(90,150,255,0.4)":"rgba(70,120,220,0.14)",
+                    color:exchange===ex.id?"#d8ecff":"rgba(120,170,255,0.35)",
+                  }}>
+                    <span style={{width:7,height:7,borderRadius:"50%",background:ex.color,flexShrink:0}}/>
+                    {ex.label}
+                  </button>
+                ))}
+              </div>
+            </Row>
+            <Row label="Payment Method">
+              <Sel value={paymentFilter} onChange={e=>setPaymentFilter(e.target.value)}>
+                <option value="">All methods</option>
+                {availablePayments.filter(p=>p).map(pm=><option key={pm} value={pm}>{pm}</option>)}
+              </Sel>
+            </Row>
+            <Row label="Completion Rate">
+              <div style={{display:"flex",gap:6}}>
+                {RATE_FILTERS.map(r=>(
+                  <button key={r.id} onClick={()=>setMinRate(r.id)} style={{
+                    flex:1,padding:"10px 6px",borderRadius:9,border:"1.5px solid",cursor:"pointer",
+                    fontFamily:"DM Mono,monospace",fontSize:10,fontWeight:600,minHeight:42,
+                    background:minRate===r.id?"rgba(38,166,154,0.14)":"rgba(4,10,26,0.7)",
+                    borderColor:minRate===r.id?"rgba(38,166,154,0.4)":"rgba(70,120,220,0.12)",
+                    color:minRate===r.id?"#26a69a":"rgba(100,150,255,0.35)",
+                  }}>{r.label}</button>
+                ))}
+              </div>
+            </Row>
+            <Row label="Sort By">
+              <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                {SORT_OPTIONS.map(o=>(
+                  <button key={o.id} onClick={()=>setSort(o.id)} style={{
+                    flex:1,padding:"10px 8px",borderRadius:9,border:"1.5px solid",cursor:"pointer",
+                    fontFamily:"DM Mono,monospace",fontSize:10,fontWeight:600,minHeight:42,
+                    background:sort===o.id?"rgba(80,130,255,0.14)":"rgba(4,10,26,0.7)",
+                    borderColor:sort===o.id?"rgba(90,150,255,0.35)":"rgba(70,120,220,0.12)",
+                    color:sort===o.id?"#a8ccff":"rgba(100,150,255,0.35)",
+                  }}>{o.label}</button>
+                ))}
+              </div>
+            </Row>
+            <button onClick={()=>setOpen(false)} style={{
+              width:"100%",padding:"13px",borderRadius:11,border:"none",cursor:"pointer",marginTop:4,minHeight:48,
+              background:"linear-gradient(135deg,rgba(38,166,154,0.2),rgba(74,158,255,0.15))",
+              color:"#7effd4",fontFamily:"DM Mono,monospace",fontSize:12,fontWeight:700,
+              border:"1.5px solid rgba(38,166,154,0.3)",
+            }}>Apply Filters ✓</button>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // ─── Mobile Market Mode ───────────────────────────────────────────────────────
+  function MobileMarketMode(){
+    const [trending,setTrending]=useState([])
+    const [loading,setLoading]=useState(true)
+    const [tab,setTab]=useState("trending")
+    const [search,setSearch]=useState("")
+    const [favs,setFavs]=useState([])
+
+    useEffect(()=>{
+      fetch("https://flowanalytics-production.up.railway.app/market/trending")
+        .then(r=>r.json()).then(d=>{setTrending(d.data||[]);setLoading(false)}).catch(()=>setLoading(false))
+    },[])
+
+    const toggleFav=sym=>{
+      setFavs(f=>f.includes(sym)?f.filter(x=>x!==sym):[...f,sym])
+    }
+
+    const filtered=trending.filter(t=>{
+      const sym=(t.symbol||"").toLowerCase()
+      if(search&&!sym.includes(search.toLowerCase()))return false
+      if(tab==="gainers")return t.change>=0
+      if(tab==="losers")return t.change<0
+      if(tab==="favorites")return favs.includes(t.symbol)
+      return true
+    }).sort((a,b)=>{
+      if(tab==="gainers")return b.change-a.change
+      if(tab==="losers")return a.change-b.change
+      return 0
+    })
+
+    const tabs=[
+      {id:"trending",label:"🔥 Trending"},
+      {id:"gainers",label:"▲ Gainers"},
+      {id:"losers",label:"▼ Losers"},
+      {id:"favorites",label:"★ Favs"},
+    ]
+
+    return(
+      <div style={{width:"100%"}}>
+        {/* Search bar */}
+        <div style={{position:"relative",marginBottom:12}}>
+          <span style={{position:"absolute",left:13,top:"50%",transform:"translateY(-50%)",fontSize:16,color:"rgba(80,130,255,0.35)",pointerEvents:"none"}}>🔍</span>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search symbol..."
+            style={{width:"100%",background:"rgba(8,16,42,0.8)",border:"1.5px solid rgba(70,120,220,0.18)",borderRadius:13,
+              padding:"13px 14px 13px 40px",fontFamily:"DM Mono,monospace",fontSize:13,color:"#fff",outline:"none",
+              boxSizing:"border-box",minHeight:48}}
+            onFocus={e=>e.target.style.borderColor="rgba(90,150,255,0.45)"}
+            onBlur={e=>e.target.style.borderColor="rgba(70,120,220,0.18)"}/>
+        </div>
+
+        {/* Category tabs */}
+        <div style={{display:"flex",gap:6,marginBottom:12,overflowX:"auto",WebkitOverflowScrolling:"touch",paddingBottom:2}}>
+          {tabs.map(t=>(
+            <button key={t.id} onClick={()=>setTab(t.id)} style={{
+              flexShrink:0,padding:"9px 16px",borderRadius:22,border:"1.5px solid",cursor:"pointer",
+              fontFamily:"DM Mono,monospace",fontSize:11,fontWeight:700,whiteSpace:"nowrap",minHeight:40,
+              transition:"all .2s",
+              background:tab===t.id?"rgba(38,166,154,0.15)":"rgba(6,14,36,0.7)",
+              borderColor:tab===t.id?"rgba(38,166,154,0.45)":"rgba(70,120,220,0.14)",
+              color:tab===t.id?"#26a69a":"rgba(120,170,255,0.4)",
+            }}>{t.label}</button>
+          ))}
+        </div>
+
+        {/* Asset list */}
+        <div className="glass-strong" style={{overflow:"hidden"}}>
+          {/* Header */}
+          <div style={{display:"grid",gridTemplateColumns:"32px 1fr auto 80px",alignItems:"center",padding:"9px 16px",borderBottom:"1px solid rgba(50,90,180,0.08)"}}>
+            <div/>
+            <span style={{fontFamily:"DM Mono,monospace",fontSize:8,letterSpacing:"0.14em",textTransform:"uppercase",color:"rgba(80,130,255,0.35)"}}>Symbol</span>
+            <span style={{fontFamily:"DM Mono,monospace",fontSize:8,letterSpacing:"0.14em",textTransform:"uppercase",color:"rgba(80,130,255,0.35)",textAlign:"right",paddingRight:16}}>Price</span>
+            <span style={{fontFamily:"DM Mono,monospace",fontSize:8,letterSpacing:"0.14em",textTransform:"uppercase",color:"rgba(80,130,255,0.35)",textAlign:"center"}}>24h</span>
+          </div>
+
+          {loading?(
+            <div style={{padding:48,textAlign:"center",fontFamily:"DM Mono,monospace",fontSize:12,color:"rgba(80,130,255,0.35)"}}>
+              <span className="pulse" style={{marginRight:8}}/>loading...
+            </div>
+          ):filtered.length===0?(
+            <div style={{padding:48,textAlign:"center",fontFamily:"DM Mono,monospace",fontSize:12,color:"rgba(80,130,255,0.3)"}}>
+              {tab==="favorites"&&favs.length===0?"tap ★ to save favorites":"no results"}
+            </div>
+          ):filtered.map((t,i)=>{
+            const up=t.change>=0
+            const col=up?"#26a69a":"#ef5350"
+            const isFav=favs.includes(t.symbol)
+            return(
+              <div key={i} style={{
+                display:"grid",gridTemplateColumns:"32px 1fr auto 80px",
+                alignItems:"center",padding:"14px 16px",
+                borderBottom:"1px solid rgba(50,90,180,0.05)",
+                background:"transparent",transition:"background .15s",minHeight:64,
+              }}
+              onMouseEnter={e=>e.currentTarget.style.background="rgba(80,130,255,0.04)"}
+              onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                {/* Fav */}
+                <button onClick={()=>toggleFav(t.symbol)} style={{
+                  background:"none",border:"none",cursor:"pointer",padding:0,
+                  fontSize:16,color:isFav?"#f0b90b":"rgba(80,130,255,0.18)",
+                  transition:"color .2s",width:32,height:44,display:"flex",alignItems:"center",justifyContent:"center",
+                }}>★</button>
+                {/* Symbol */}
+                <div style={{minWidth:0}}>
+                  <div style={{fontFamily:"DM Mono,monospace",fontSize:13,fontWeight:700,color:"#c8e0ff"}}>
+                    {t.symbol}<span style={{color:"rgba(100,150,255,0.3)",fontWeight:400,fontSize:11}}>/USDT</span>
+                  </div>
+                  <div style={{fontFamily:"DM Mono,monospace",fontSize:10,color:"rgba(80,130,255,0.38)",marginTop:2}}>
+                    Vol ${(t.volume/1_000_000).toFixed(1)}M
+                  </div>
+                </div>
+                {/* Price */}
+                <div style={{fontFamily:"DM Mono,monospace",fontSize:13,fontWeight:600,color:"#e8f4ff",textAlign:"right",paddingRight:12}}>
+                  ${t.price<1?t.price.toFixed(5):t.price.toLocaleString(undefined,{maximumFractionDigits:2})}
+                </div>
+                {/* Change badge */}
+                <div style={{
+                  padding:"7px 6px",borderRadius:9,textAlign:"center",minHeight:36,display:"flex",alignItems:"center",justifyContent:"center",
+                  background:up?"rgba(38,166,154,0.12)":"rgba(239,83,80,0.1)",
+                  border:`1px solid ${col}25`,
+                }}>
+                  <span style={{fontFamily:"DM Mono,monospace",fontSize:12,fontWeight:700,color:col}}>
+                    {up?"+":""}{t.change.toFixed(2)}%
+                  </span>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
+
+    // ─── Market Sentiment ─────────────────────────────────────────────────────────
   function MarketSentiment(){
     const [coins,setCoins]=useState([])
     const [collapsed,setCollapsed]=useState(true)
@@ -1031,8 +1310,11 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
           @keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.25;transform:scale(.65);}}
           .divider{width:1px;height:15px;background:rgba(60,100,200,0.14);}
           /* Mobile */
+          .desktop-only-flex{display:flex;}
+          .desktop-only-block{display:block;}
+          .mobile-only-block{display:none;}
           @media(max-width:640px){
-            .wrapper{overflow-x:hidden;padding:20px 12px 60px;}
+            .wrapper{overflow-x:hidden;padding:16px 12px 60px;}
             .bg-orb{display:none;}
             .glass-strong{border-radius:14px;}
             .controls{padding:10px 12px;gap:8px;}
@@ -1044,12 +1326,16 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
             .meta{align-items:center;}
             .desktop-table{display:none !important;}
             .mobile-cards{display:block !important;}
+            .desktop-only-flex{display:none !important;}
+            .desktop-only-block{display:none !important;}
+            .mobile-only-block{display:block !important;}
           }
           @media(min-width:641px){
             .mobile-cards{display:none !important;}
+            .mobile-only-block{display:none !important;}
           }
           @media(max-width:400px){
-            .title{font-size:24px;}
+            .title{font-size:22px;}
           }
         `}</style>
 
@@ -1069,7 +1355,9 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
           </div>
 
           {mode==="market"?(
-            isPortrait?(
+            isMobile?(
+              <MobileMarketMode/>
+            ):isPortrait?(
               <div style={{
                 display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
                 minHeight:"60vh",gap:20,padding:32,textAlign:"center",
@@ -1082,7 +1370,8 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
               </div>
             ):<MarketMode/>
           ):(<>
-            <div className="exchange-tabs">
+            {/* ── Desktop: exchange tabs ── */}
+            <div className="exchange-tabs desktop-only-flex">
               {EXCHANGES_CONFIG.map(ex=>(
                 <button key={ex.id} className={`ex-tab ${exchange===ex.id?"active":""}`} onClick={()=>setExchange(ex.id)}>
                   <span className="ex-dot" style={{background:ex.color}}/>{ex.label}
@@ -1090,8 +1379,8 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
               ))}
             </div>
 
-            <div className="glass-strong controls">
-              {/* ROW 1: pair + side */}
+            {/* ── Desktop controls ── */}
+            <div className="glass-strong controls desktop-only-block">
               <div className="ctrl-row">
                 <div className="sel-wrap">
                   <select value={fiat} onChange={e=>setFiat(e.target.value)}>
@@ -1111,7 +1400,6 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
                     <button key={s} className={`side-btn ${side===s?(s==="BUY"?"buy-active":"sell-active"):""}`} onClick={()=>setSide(s)}>{s}</button>
                   ))}
                 </div>
-                {/* LIVE — single button, always row 1 end */}
                 <div className="meta" style={{marginLeft:"auto"}}>
                   <button onClick={()=>setLiveMode(l=>!l)} className="live-btn" style={{background:liveMode?"rgba(38,166,154,0.12)":"rgba(60,80,150,0.12)"}}>
                     <span style={{width:6,height:6,borderRadius:"50%",flexShrink:0,background:liveMode?"#26a69a":"rgba(120,150,255,0.3)",boxShadow:liveMode?"0 0 6px #26a69a":"none",animation:liveMode?"pulse 1.6s infinite":"none"}}/>
@@ -1124,7 +1412,6 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
                   </svg></div>}
                 </div>
               </div>
-              {/* ROW 2: sort + rate */}
               <div className="ctrl-row" style={{flexWrap:"wrap"}}>
                 <div className="ctrl-label">Sort</div>
                 <div className="sort-tabs">
@@ -1140,7 +1427,6 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
                   ))}
                 </div>
               </div>
-              {/* ROW 3: payment */}
               <div className="ctrl-row">
                 <div className="ctrl-label">Pay</div>
                 <div className="sel-wrap" style={{flex:1}}>
@@ -1153,6 +1439,20 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
                 </div>
               </div>
             </div>
+
+            {/* ── Mobile filter button ── */}
+            <MobileFilters
+              fiat={fiat} setFiat={setFiat}
+              crypto={crypto} setCrypto={setCrypto}
+              side={side} setSide={setSide}
+              exchange={exchange} setExchange={setExchange}
+              paymentFilter={paymentFilter} setPaymentFilter={setPaymentFilter}
+              minRate={minRate} setMinRate={setMinRate}
+              sort={sort} setSort={setSort}
+              availablePayments={availablePayments}
+              liveMode={liveMode} setLiveMode={setLiveMode}
+              lastUpdated={lastUpdated} countdown={countdown} TTL={TTL}
+            />
 
             <MarketSentiment/>
             <div className="glass-strong" style={{overflow:"hidden",marginBottom:13}}>

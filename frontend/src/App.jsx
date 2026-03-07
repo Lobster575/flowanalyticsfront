@@ -553,12 +553,12 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
       setFavs(f=>f.includes(sym)?f.filter(x=>x!==sym):[...f,sym])
     }
 
-    const filtered=trending.filter(t=>{
-      const sym=(t.symbol||"").toLowerCase()
+    const filtered=trending.filter(coin=>{
+      const sym=(coin.symbol||"").toLowerCase()
       if(search&&!sym.includes(search.toLowerCase()))return false
-      if(tab==="gainers")return t.change>=0
-      if(tab==="losers")return t.change<0
-      if(tab==="favorites")return favs.includes(t.symbol)
+      if(tab==="gainers")return coin.change>=0
+      if(tab==="losers")return coin.change<0
+      if(tab==="favorites")return favs.includes(coin.symbol)
       return true
     }).sort((a,b)=>{
       if(tab==="gainers")return b.change-a.change
@@ -566,11 +566,12 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
       return 0
     })
 
+    const tr2=t||(k=>k)
     const tabs=[
-      {id:"trending",label:"🔥 Trending"},
-      {id:"gainers",label:"▲ Gainers"},
-      {id:"losers",label:"▼ Losers"},
-      {id:"favorites",label:"★ Favs"},
+      {id:"trending",label:"🔥 "+tr2("trending")},
+      {id:"gainers",label:"▲ "+tr2("gainers")},
+      {id:"losers",label:"▼ "+tr2("losers")},
+      {id:"favorites",label:"★ "+tr2("favs")},
     ]
 
     return(
@@ -618,10 +619,10 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
             <div style={{padding:48,textAlign:"center",fontFamily:"DM Mono,monospace",fontSize:12,color:"rgba(80,130,255,0.3)"}}>
         {tab==="favorites"&&favs.length===0?tr2("noFavs"):tr2("noOffersFound")}
             </div>
-          ):filtered.map((t,i)=>{
-            const up=t.change>=0
+          ):filtered.map((item,i)=>{
+            const up=item.change>=0
             const col=up?"#26a69a":"#ef5350"
-            const isFav=favs.includes(t.symbol)
+            const isFav=favs.includes(item.symbol)
             return(
               <div key={i} style={{
                 display:"grid",gridTemplateColumns:"32px 1fr auto 80px",
@@ -632,7 +633,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
               onMouseEnter={e=>e.currentTarget.style.background="rgba(80,130,255,0.04)"}
               onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
                 {/* Fav */}
-                <button onClick={()=>toggleFav(t.symbol)} style={{
+                <button onClick={()=>toggleFav(item.symbol)} style={{
                   background:"none",border:"none",cursor:"pointer",padding:0,
                   fontSize:16,color:isFav?"#f0b90b":"rgba(80,130,255,0.18)",
                   transition:"color .2s",width:32,height:44,display:"flex",alignItems:"center",justifyContent:"center",
@@ -640,15 +641,15 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
                 {/* Symbol */}
                 <div style={{minWidth:0}}>
                   <div style={{fontFamily:"DM Mono,monospace",fontSize:13,fontWeight:700,color:"#c8e0ff"}}>
-                    {t.symbol}<span style={{color:"rgba(100,150,255,0.3)",fontWeight:400,fontSize:11}}>/USDT</span>
+                    {item.symbol}<span style={{color:"rgba(100,150,255,0.3)",fontWeight:400,fontSize:11}}>/USDT</span>
                   </div>
                   <div style={{fontFamily:"DM Mono,monospace",fontSize:10,color:"rgba(80,130,255,0.38)",marginTop:2}}>
-                    Vol ${(t.volume/1_000_000).toFixed(1)}M
+                    Vol ${(item.volume/1_000_000).toFixed(1)}M
                   </div>
                 </div>
                 {/* Price */}
                 <div style={{fontFamily:"DM Mono,monospace",fontSize:13,fontWeight:600,color:"#e8f4ff",textAlign:"right",paddingRight:12}}>
-                  ${t.price<1?t.price.toFixed(5):t.price.toLocaleString(undefined,{maximumFractionDigits:2})}
+                  ${item.price<1?item.price.toFixed(5):item.price.toLocaleString(undefined,{maximumFractionDigits:2})}
                 </div>
                 {/* Change badge */}
                 <div style={{
@@ -657,7 +658,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
                   border:`1px solid ${col}25`,
                 }}>
                   <span style={{fontFamily:"DM Mono,monospace",fontSize:12,fontWeight:700,color:col}}>
-                    {up?"+":""}{t.change.toFixed(2)}%
+                    {up?"+":""}{item.change.toFixed(2)}%
                   </span>
                 </div>
               </div>

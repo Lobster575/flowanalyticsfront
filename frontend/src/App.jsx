@@ -19,19 +19,67 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
     ADA:"Cardano",DOT:"Polkadot",LINK:"Chainlink",AVAX:"Avalanche",MATIC:"Polygon",
     DOGE:"Dogecoin",SHIB:"Shiba Inu",LTC:"Litecoin",UNI:"Uniswap",TRX:"TRON",
   }
-  const SORT_OPTIONS = [
-    { id:"price",  label:"Price" },
-    { id:"volume", label:"Volume" },
-    { id:"rate",   label:"Completion" },
-    { id:"score",  label:"Score" },
+  // strip emoji from advertiser names
+  const stripEmoji = s => (s||"").replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu,"").replace(/\s+/g," ").trim()
+
+  const TR = {
+    en: {
+      p2p:"P2P", market:"Market", buy:"BUY", sell:"SELL",
+      filters:"Filters", applyFilters:"Apply Filters",
+      fiatCurrency:"Fiat Currency", crypto:"Crypto", side:"Side",
+      exchange:"Exchange", paymentMethod:"Payment Method",
+      completionRate:"Completion Rate", sortBy:"Sort By", allMethods:"All methods",
+      fetchingOffers:"fetching offers...", noOffersFound:"no offers found",
+      connectionError:"Connection error",
+      trending:"Trending", gainers:"Gainers", losers:"Losers", favs:"Favs",
+      searchSymbol:"Search symbol...",
+      live:"LIVE", off:"OFF", bestSpread:"Best Spread",
+      marketSentiment:"Market Sentiment", quickCalc:"Quick Calculator",
+      viewAdvertiser:"View advertiser",
+      bestPrice:"Best Price", sortLabel:"sort", rateLabel:"rate",
+      min:"Min", max:"Max", fee:"Fee",
+      rotatePhone:"Rotate your phone", rotateDesc:"Market charts require landscape orientation",
+      noFavs:"Tap \u2605 to save favorites",
+      all:"All",
+    },
+    ru: {
+      p2p:"P2P", market:"\u0420\u044b\u043d\u043e\u043a", buy:"\u041a\u0443\u043f\u0438\u0442\u044c", sell:"\u041f\u0440\u043e\u0434\u0430\u0442\u044c",
+      filters:"\u0424\u0438\u043b\u044c\u0442\u0440\u044b", applyFilters:"\u041f\u0440\u0438\u043c\u0435\u043d\u0438\u0442\u044c",
+      fiatCurrency:"\u0412\u0430\u043b\u044e\u0442\u0430", crypto:"\u041a\u0440\u0438\u043f\u0442\u043e", side:"\u041d\u0430\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u0438\u0435",
+      exchange:"\u0411\u0438\u0440\u0436\u0430", paymentMethod:"\u0421\u043f\u043e\u0441\u043e\u0431 \u043e\u043f\u043b\u0430\u0442\u044b",
+      completionRate:"\u0423\u0441\u043f\u0435\u0448\u043d\u043e\u0441\u0442\u044c", sortBy:"\u0421\u043e\u0440\u0442\u0438\u0440\u043e\u0432\u043a\u0430",
+      allMethods:"\u0412\u0441\u0435 \u0441\u043f\u043e\u0441\u043e\u0431\u044b",
+      fetchingOffers:"\u0437\u0430\u0433\u0440\u0443\u0437\u043a\u0430...", noOffersFound:"\u043f\u0440\u0435\u0434\u043b\u043e\u0436\u0435\u043d\u0438\u044f \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u044b",
+      connectionError:"\u041e\u0448\u0438\u0431\u043a\u0430 \u0441\u043e\u0435\u0434\u0438\u043d\u0435\u043d\u0438\u044f",
+      trending:"\u0422\u043e\u043f", gainers:"\u0420\u043e\u0441\u0442", losers:"\u041f\u0430\u0434\u0435\u043d\u0438\u0435", favs:"\u0418\u0437\u0431\u0440.",
+      searchSymbol:"\u041f\u043e\u0438\u0441\u043a...",
+      live:"\u042d\u0424\u0418\u0420", off:"\u0412\u042b\u041a\u041b", bestSpread:"\u041b\u0443\u0447\u0448\u0438\u0439 \u0441\u043f\u0440\u0435\u0434",
+      marketSentiment:"\u041d\u0430\u0441\u0442\u0440\u043e\u0435\u043d\u0438\u0435 \u0440\u044b\u043d\u043a\u0430", quickCalc:"\u041a\u0430\u043b\u044c\u043a\u0443\u043b\u044f\u0442\u043e\u0440",
+      viewAdvertiser:"\u041f\u0440\u043e\u0444\u0438\u043b\u044c",
+      bestPrice:"\u041b\u0443\u0447\u0448\u0430\u044f \u0446\u0435\u043d\u0430", sortLabel:"\u0441\u043e\u0440\u0442", rateLabel:"\u0441\u0442\u0430\u0432\u043a\u0430",
+      min:"\u041c\u0438\u043d", max:"\u041c\u0430\u043a\u0441", fee:"\u041a\u043e\u043c\u0438\u0441",
+      rotatePhone:"\u041f\u043e\u0432\u0435\u0440\u043d\u0438\u0442\u0435 \u0442\u0435\u043b\u0435\u0444\u043e\u043d", rotateDesc:"\u0413\u0440\u0430\u0444\u0438\u043a\u0438 \u0442\u0440\u0435\u0431\u0443\u044e\u0442 \u0433\u043e\u0440\u0438\u0437\u043e\u043d\u0442\u0430\u043b\u044c\u043d\u043e\u0439 \u043e\u0440\u0438\u0435\u043d\u0442\u0430\u0446\u0438\u0438",
+      noFavs:"\u041d\u0430\u0436\u043c\u0438\u0442\u0435 \u2605 \u0434\u043b\u044f \u0438\u0437\u0431\u0440\u0430\u043d\u043d\u043e\u0433\u043e",
+      all:"\u0412\u0441\u0435",
+    }
+  }
+
+  const SORT_OPTIONS_BASE = [
+    { id:"price",  en:"Price",      ru:"\u0426\u0435\u043d\u0430" },
+    { id:"volume", en:"Volume",     ru:"\u041e\u0431\u044a\u0451\u043c" },
+    { id:"rate",   en:"Completion", ru:"\u0423\u0441\u043f\u0435\u0448\u043d\u043e\u0441\u0442\u044c" },
+    { id:"score",  en:"Score",      ru:"\u0420\u0435\u0439\u0442\u0438\u043d\u0433" },
   ]
+  const RATE_FILTERS_BASE = [
+    { id:0,  label:"All",  ru:"\u0412\u0441\u0435" },
+    { id:90, label:"90%+", ru:"90%+" },
+    { id:95, label:"95%+", ru:"95%+" },
+    { id:98, label:"98%+", ru:"98%+" },
+  ]
+
   const COMMON_PAYMENTS = ["BLIK","Revolut","SEPA","Wise","PayPal","Bank Transfer","WebMoney","Paysend","Western Union","Faster Payments"]
-  const RATE_FILTERS = [
-    { id:0,  label:"All" },
-    { id:90, label:"90%+" },
-    { id:95, label:"95%+" },
-    { id:98, label:"98%+" },
-  ]
+  const SORT_OPTIONS = SORT_OPTIONS_BASE.map(o=>({id:o.id,label:o.en}))
+  const RATE_FILTERS = RATE_FILTERS_BASE.map(o=>({id:o.id,label:o.label}))
 
   // ─── Particles ────────────────────────────────────────────────────────────────
   function ParticleField() {
@@ -253,7 +301,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
   }
 
   // ─── Spread Banner ────────────────────────────────────────────────────────────
-  function SpreadBanner(){
+  function SpreadBanner({t}){
     const [spread,setSpread]=useState(null)
     const [collapsed,setCollapsed]=useState(false)
     useEffect(()=>{
@@ -265,13 +313,13 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
     const pct=spread.spread_pct
     const pctColor=pct>1?"#3dffa0":pct>0?"#f0b90b":"#ef5350"
     const SideCard=({label,price,currency,advertiser,exchange,url,accentColor,bg})=>(
-      <div style={{flex:1,minWidth:0,background:bg,borderRadius:14,padding:"16px 16px 14px",border:`1.5px solid ${accentColor}30`,display:"flex",flexDirection:"column",gap:8}}>
+      <div style={{flex:1,minWidth:0,background:bg,borderRadius:12,padding:"11px 12px 11px",border:`1.5px solid ${accentColor}30`,display:"flex",flexDirection:"column",gap:8}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
           <span style={{fontFamily:"DM Mono,monospace",fontSize:9,letterSpacing:"0.2em",textTransform:"uppercase",color:`${accentColor}cc`,fontWeight:600}}>{label}</span>
           <span style={{fontFamily:"DM Mono,monospace",fontSize:9,color:"rgba(100,140,255,0.4)",background:"rgba(80,120,255,0.08)",padding:"2px 8px",borderRadius:20,border:"1px solid rgba(80,120,255,0.12)"}}>{exchange}</span>
         </div>
         <div style={{fontFamily:"DM Mono,monospace",lineHeight:1}}>
-          <div style={{fontSize:"clamp(20px,5vw,28px)",fontWeight:800,color:accentColor,letterSpacing:"-0.02em"}}>{price.toFixed(3)}</div>
+          <div style={{fontSize:"clamp(16px,4vw,22px)",fontWeight:800,color:accentColor,letterSpacing:"-0.02em"}}>{price.toFixed(3)}</div>
           <div style={{fontSize:11,color:"rgba(180,210,255,0.4)",marginTop:3}}>{currency}</div>
         </div>
         <div style={{fontFamily:"DM Mono,monospace",fontSize:11,color:"rgba(140,180,255,0.55)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
@@ -287,7 +335,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
           }}
           onMouseEnter={e=>{e.currentTarget.style.background=`${accentColor}28`}}
           onMouseLeave={e=>{e.currentTarget.style.background=`${accentColor}18`}}>
-            View advertiser ↗
+            {(t&&t("viewAdvertiser"))||"View advertiser"} ↗
           </a>
         )}
       </div>
@@ -295,10 +343,10 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
     return(
       <div style={{background:"linear-gradient(135deg,rgba(38,166,154,0.07) 0%,rgba(20,40,100,0.04) 100%)"}}>
         {/* Header — click to collapse */}
-        <div onClick={()=>setCollapsed(c=>!c)} style={{padding:"14px 18px",display:"flex",alignItems:"center",gap:10,cursor:"pointer",userSelect:"none"}}>
+        <div onClick={()=>setCollapsed(c=>!c)} style={{padding:"10px 14px",display:"flex",alignItems:"center",gap:10,cursor:"pointer",userSelect:"none"}}>
           <span style={{fontSize:8,letterSpacing:"0.22em",textTransform:"uppercase",color:"rgba(38,166,154,0.5)",fontFamily:"DM Mono,monospace"}}>⚡ Best Spread</span>
           <div style={{flex:1,height:1,background:"rgba(38,166,154,0.1)"}}/>
-          <div style={{fontFamily:"DM Mono,monospace",fontSize:"clamp(16px,4vw,22px)",fontWeight:900,color:pctColor,
+          <div style={{fontFamily:"DM Mono,monospace",fontSize:"clamp(13px,3.5vw,18px)",fontWeight:900,color:pctColor,
             background:`${pctColor}18`,padding:"4px 14px",borderRadius:24,border:`1.5px solid ${pctColor}40`,
             boxShadow:`0 0 18px ${pctColor}30`,letterSpacing:"-0.01em",flexShrink:0}}>
             {pct>0?"+":""}{pct}%
@@ -307,7 +355,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
         </div>
         {/* Cards — collapsible */}
         {!collapsed&&(
-          <div style={{padding:"0 14px 16px",display:"flex",gap:10,alignItems:"stretch"}}>
+          <div style={{padding:"0 10px 12px",display:"flex",gap:8,alignItems:"stretch"}}>
             <SideCard label="BUY" price={spread.buy_price} currency={spread.fiat}
               advertiser={spread.buy_advertiser} exchange={spread.buy_exchange} url={spread.buy_url}
               accentColor="#26a69a" bg="rgba(38,166,154,0.06)"/>
@@ -327,14 +375,13 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 
   // ─── Mobile Filter Panel ─────────────────────────────────────────────────────
   function MobileFilters({fiat,setFiat,crypto,setCrypto,side,setSide,exchange,setExchange,
-    paymentFilter,setPaymentFilter,minRate,setMinRate,sort,setSort,availablePayments,
-    liveMode,setLiveMode,lastUpdated,countdown,TTL}){
+    paymentFilter,setPaymentFilter,minRate,setMinRate,sort,setSort,sortOptions,rateFilters,availablePayments,
+    liveMode,setLiveMode,lastUpdated,countdown,TTL,t,lang}){
     const [open,setOpen]=useState(false)
-    const activeCount=[
-      paymentFilter?1:0,
-      minRate>0?1:0,
-      sort!=="price"?1:0,
-    ].reduce((a,b)=>a+b,0)
+    const activeCount=[paymentFilter?1:0,minRate>0?1:0,sort!=="price"?1:0].reduce((a,b)=>a+b,0)
+    const sortOpts=sortOptions||SORT_OPTIONS_BASE.map(o=>({id:o.id,label:o.en}))
+    const rateOpts=rateFilters||RATE_FILTERS_BASE.map(o=>({id:o.id,label:o.label}))
+    const tr=t||(k=>k)
 
     const Row=({label,children})=>(
       <div style={{marginBottom:14}}>
@@ -368,7 +415,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
             transition:"all .2s",
           }}>
             <span style={{fontSize:15}}>⚙</span>
-            Filters
+            {tr("filters")}
             {activeCount>0&&<span style={{
               background:"#26a69a",color:"#040a18",borderRadius:"50%",
               width:18,height:18,display:"flex",alignItems:"center",justifyContent:"center",
@@ -385,7 +432,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
             flexShrink:0,
           }}>
             <span style={{width:7,height:7,borderRadius:"50%",background:liveMode?"#26a69a":"rgba(120,150,255,0.3)",boxShadow:liveMode?"0 0 6px #26a69a":"none",animation:liveMode?"pulse 1.6s infinite":"none"}}/>
-            <span style={{fontFamily:"DM Mono,monospace",fontSize:10,color:liveMode?"#26a69a":"rgba(100,140,255,0.35)",fontWeight:600}}>{liveMode?"LIVE":"OFF"}</span>
+<span style={{fontFamily:"DM Mono,monospace",fontSize:10,color:liveMode?"#26a69a":"rgba(100,140,255,0.35)",fontWeight:600}}>{liveMode?tr("live"):tr("off")}</span>
           </button>
           {liveMode&&<div className="countdown" style={{flexShrink:0}}><svg width="32" height="32" viewBox="0 0 32 32">
             <circle className="countdown-track" cx="16" cy="16" r="14"/>
@@ -396,8 +443,8 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
         {/* Active filters summary chips */}
         {!open&&(paymentFilter||minRate>0||sort!=="price")&&(
           <div style={{display:"flex",flexWrap:"wrap",gap:5,marginTop:8}}>
-            {sort!=="price"&&<span style={{fontFamily:"DM Mono,monospace",fontSize:10,padding:"3px 10px",borderRadius:20,background:"rgba(38,166,154,0.1)",border:"1px solid rgba(38,166,154,0.25)",color:"#26a69a"}}>sort: {sort}</span>}
-            {minRate>0&&<span style={{fontFamily:"DM Mono,monospace",fontSize:10,padding:"3px 10px",borderRadius:20,background:"rgba(38,166,154,0.1)",border:"1px solid rgba(38,166,154,0.25)",color:"#26a69a"}}>rate ≥{minRate}%</span>}
+            {sort!=="price"&&<span style={{fontFamily:"DM Mono,monospace",fontSize:10,padding:"3px 10px",borderRadius:20,background:"rgba(38,166,154,0.1)",border:"1px solid rgba(38,166,154,0.25)",color:"#26a69a"}}>{tr("sortLabel")}: {sort}</span>}
+            {minRate>0&&<span style={{fontFamily:"DM Mono,monospace",fontSize:10,padding:"3px 10px",borderRadius:20,background:"rgba(38,166,154,0.1)",border:"1px solid rgba(38,166,154,0.25)",color:"#26a69a"}}>{tr("rateLabel")} ≥{minRate}%</span>}
             {paymentFilter&&<span style={{fontFamily:"DM Mono,monospace",fontSize:10,padding:"3px 10px",borderRadius:20,background:"rgba(38,166,154,0.1)",border:"1px solid rgba(38,166,154,0.25)",color:"#26a69a"}}>{paymentFilter}</span>}
           </div>
         )}
@@ -405,17 +452,17 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
         {/* Dropdown panel */}
         {open&&(
           <div className="glass-strong" style={{marginTop:8,padding:"18px 16px 10px",overflow:"hidden"}}>
-            <Row label="Fiat Currency">
+            <Row label={tr("fiatCurrency")}>
               <Sel value={fiat} onChange={e=>setFiat(e.target.value)}>
                 {FIATS.map(f=><option key={f}>{f}</option>)}
               </Sel>
             </Row>
-            <Row label="Crypto">
+            <Row label={tr("crypto")}>
               <Sel value={crypto} onChange={e=>setCrypto(e.target.value)}>
                 {CRYPTOS.map(c=><option key={c}>{c}</option>)}
               </Sel>
             </Row>
-            <Row label="Side">
+            <Row label={tr("side")}>
               <div style={{display:"flex",gap:8}}>
                 {["BUY","SELL"].map(s=>(
                   <button key={s} onClick={()=>setSide(s)} style={{
@@ -428,7 +475,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
                 ))}
               </div>
             </Row>
-            <Row label="Exchange">
+            <Row label={tr("exchange")}>
               <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
                 {EXCHANGES_CONFIG.map(ex=>(
                   <button key={ex.id} onClick={()=>setExchange(ex.id)} style={{
@@ -445,15 +492,15 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
                 ))}
               </div>
             </Row>
-            <Row label="Payment Method">
+            <Row label={tr("paymentMethod")}>
               <Sel value={paymentFilter} onChange={e=>setPaymentFilter(e.target.value)}>
-                <option value="">All methods</option>
+                <option value="">{tr("allMethods")}</option>
                 {availablePayments.filter(p=>p).map(pm=><option key={pm} value={pm}>{pm}</option>)}
               </Sel>
             </Row>
-            <Row label="Completion Rate">
+            <Row label={tr("completionRate")}>
               <div style={{display:"flex",gap:6}}>
-                {RATE_FILTERS.map(r=>(
+                {rateOpts.map(r=>(
                   <button key={r.id} onClick={()=>setMinRate(r.id)} style={{
                     flex:1,padding:"10px 6px",borderRadius:9,border:"1.5px solid",cursor:"pointer",
                     fontFamily:"DM Mono,monospace",fontSize:10,fontWeight:600,minHeight:42,
@@ -464,9 +511,9 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
                 ))}
               </div>
             </Row>
-            <Row label="Sort By">
+            <Row label={tr("sortBy")}>
               <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                {SORT_OPTIONS.map(o=>(
+                {sortOpts.map(o=>(
                   <button key={o.id} onClick={()=>setSort(o.id)} style={{
                     flex:1,padding:"10px 8px",borderRadius:9,border:"1.5px solid",cursor:"pointer",
                     fontFamily:"DM Mono,monospace",fontSize:10,fontWeight:600,minHeight:42,
@@ -482,7 +529,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
               background:"linear-gradient(135deg,rgba(38,166,154,0.2),rgba(74,158,255,0.15))",
               color:"#7effd4",fontFamily:"DM Mono,monospace",fontSize:12,fontWeight:700,
               border:"1.5px solid rgba(38,166,154,0.3)",
-            }}>Apply Filters ✓</button>
+            }}>{tr("applyFilters")} ✓</button>
           </div>
         )}
       </div>
@@ -490,7 +537,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
   }
 
   // ─── Mobile Market Mode ───────────────────────────────────────────────────────
-  function MobileMarketMode(){
+  function MobileMarketMode({t}){
     const [trending,setTrending]=useState([])
     const [loading,setLoading]=useState(true)
     const [tab,setTab]=useState("trending")
@@ -531,7 +578,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
         {/* Search bar */}
         <div style={{position:"relative",marginBottom:12}}>
           <span style={{position:"absolute",left:13,top:"50%",transform:"translateY(-50%)",fontSize:16,color:"rgba(80,130,255,0.35)",pointerEvents:"none"}}>🔍</span>
-          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search symbol..."
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder={tr2("searchSymbol")}
             style={{width:"100%",background:"rgba(8,16,42,0.8)",border:"1.5px solid rgba(70,120,220,0.18)",borderRadius:13,
               padding:"13px 14px 13px 40px",fontFamily:"DM Mono,monospace",fontSize:13,color:"#fff",outline:"none",
               boxSizing:"border-box",minHeight:48}}
@@ -569,7 +616,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
             </div>
           ):filtered.length===0?(
             <div style={{padding:48,textAlign:"center",fontFamily:"DM Mono,monospace",fontSize:12,color:"rgba(80,130,255,0.3)"}}>
-              {tab==="favorites"&&favs.length===0?"tap ★ to save favorites":"no results"}
+        {tab==="favorites"&&favs.length===0?tr2("noFavs"):tr2("noOffersFound")}
             </div>
           ):filtered.map((t,i)=>{
             const up=t.change>=0
@@ -622,7 +669,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
   }
 
     // ─── Market Sentiment ─────────────────────────────────────────────────────────
-  function MarketSentiment(){
+  function MarketSentiment({t}){
     const [coins,setCoins]=useState([])
     const [collapsed,setCollapsed]=useState(true)
     useEffect(()=>{
@@ -686,7 +733,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
   }
 
   // ─── Calculator ───────────────────────────────────────────────────────────────
-  function Calculator({offers,side,fiat:globalFiat,crypto:globalCrypto}){
+  function Calculator({offers,side,fiat:globalFiat,crypto:globalCrypto,t}){
     const [amount,setAmount]=useState("")
     const fromCur=side==="BUY"?globalFiat:globalCrypto
     const toCur=side==="BUY"?globalCrypto:globalFiat
@@ -755,7 +802,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
   }
 
   // ─── Mobile Offer Card ────────────────────────────────────────────────────────
-  function OfferCard({o,i,isBest,changed,fiat}){
+  function OfferCard({o,i,isBest,changed,fiat,t}){
     const exConf=EXCHANGES_CONFIG.find(e=>e.label===o.exchange)
     return(
       <div style={{
@@ -777,10 +824,10 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
           <div style={{textAlign:"right"}}>
             {o.url
               ?<a href={o.url} target="_blank" rel="noreferrer" style={{fontSize:14,fontWeight:700,color:"rgba(180,210,255,0.8)",textDecoration:"none",display:"flex",alignItems:"center",gap:4,justifyContent:"flex-end"}}>
-                  {o.trusted&&<span>⭐</span>}{o.advertiser}<span style={{fontSize:10,opacity:.5}}>↗</span>
+                  {o.trusted&&<span>⭐</span>}{stripEmoji(o.advertiser)}<span style={{fontSize:10,opacity:.5}}>↗</span>
                 </a>
               :<div style={{fontSize:14,fontWeight:700,color:"rgba(180,210,255,0.8)",display:"flex",alignItems:"center",gap:4,justifyContent:"flex-end"}}>
-                  {o.trusted&&<span>⭐</span>}{o.advertiser}
+                  {o.trusted&&<span>⭐</span>}{stripEmoji(o.advertiser)}
                 </div>
             }
             <div style={{fontFamily:"DM Mono,monospace",fontSize:9,color:"rgba(100,150,255,0.4)",marginTop:3,display:"flex",alignItems:"center",gap:4,justifyContent:"flex-end"}}>
@@ -1140,6 +1187,8 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
   export default function App(){
     const [intro,setIntro]=useState(true)
     const [mode,setMode]=useState("p2p")
+    const [lang,setLang]=useState("en")
+    const t=k=>TR[lang][k]||TR.en[k]||k
     const [offers,setOffers]=useState([])
     const [loading,setLoading]=useState(true)
     const [fiat,setFiat]=useState("PLN")
@@ -1223,6 +1272,9 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 
     const bestPrice=displayOffers.length?(side==="BUY"?Math.min(...displayOffers.map(o=>o.price)):Math.max(...displayOffers.map(o=>o.price))):null
 
+    const sortOptions = SORT_OPTIONS_BASE.map(o=>({id:o.id, label:lang==="ru"?o.ru:o.en}))
+    const rateFilters = RATE_FILTERS_BASE.map(o=>({id:o.id, label:lang==="ru"?o.ru:o.label}))
+
     return(
       <>
         {intro&&<IntroScreen onDone={()=>setIntro(false)}/>}
@@ -1248,7 +1300,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
           .title{font-size:clamp(26px,4.5vw,50px);font-weight:800;line-height:1.06;color:#fff;letter-spacing:-.02em;}
           .title span{background:linear-gradient(135deg,#4a9eff,#88c4ff,#e0f0ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
           .subtitle{margin-top:7px;font-size:12px;color:rgba(120,170,255,0.38);font-family:'DM Mono',monospace;font-weight:300;}
-          .mode-switcher{display:flex;width:100%;max-width:210px;background:rgba(6,14,36,0.7);border:2px solid rgba(70,120,220,0.15);border-radius:13px;padding:4px;margin-bottom:15px;}
+          .mode-switcher{display:flex;width:100%;max-width:210px;margin-bottom:15px;background:rgba(6,14,36,0.7);border:2px solid rgba(70,120,220,0.15);border-radius:13px;padding:4px;margin-bottom:15px;}
           .mode-btn{flex:1;padding:8px 0;text-align:center;border-radius:9px;border:none;cursor:pointer;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;transition:all .25s;background:transparent;color:rgba(120,170,255,0.35);}
           .mode-btn.active{background:rgba(12,30,90,0.95);color:#fff;box-shadow:0 2px 14px rgba(0,50,180,0.22);}
           .exchange-tabs{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;}
@@ -1314,7 +1366,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
           .desktop-only-block{display:block;}
           .mobile-only-block{display:none;}
           @media(max-width:640px){
-            .wrapper{overflow-x:hidden;padding:16px 12px 60px;}
+            .wrapper{overflow-x:hidden;padding:16px 12px 80px;}
             .bg-orb{display:none;}
             .glass-strong{border-radius:14px;}
             .controls{padding:10px 12px;gap:8px;}
@@ -1343,34 +1395,56 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
         <div className="bg-orb orb1"/><div className="bg-orb orb2"/><div className="bg-orb orb3"/>
 
         <div className="wrapper">
-          <div className="header">
-            <div className="logo">⬡ Metaflow</div>
+          {/* ── Header ── */}
+          <div className="header" style={{marginBottom:16}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
+              <div className="logo">⬡ Metaflow</div>
+              {/* Lang toggle */}
+              <button onClick={()=>setLang(l=>l==="en"?"ru":"en")} style={{
+                display:"flex",alignItems:"center",gap:0,borderRadius:20,overflow:"hidden",border:"1.5px solid rgba(70,120,220,0.2)",
+                background:"rgba(6,14,36,0.8)",cursor:"pointer",fontSize:10,fontFamily:"DM Mono,monospace",fontWeight:700,
+              }}>
+                <span style={{padding:"4px 10px",background:lang==="en"?"rgba(80,130,255,0.2)":"transparent",color:lang==="en"?"#a8ccff":"rgba(80,130,255,0.3)",transition:"all .2s"}}>EN</span>
+                <span style={{padding:"4px 10px",background:lang==="ru"?"rgba(80,130,255,0.2)":"transparent",color:lang==="ru"?"#a8ccff":"rgba(80,130,255,0.3)",transition:"all .2s"}}>РУС</span>
+              </button>
+            </div>
             <h1 className="title">Meta<span>flow</span><br/>Analytics</h1>
             <p className="subtitle">// real-time · {mode==="p2p"?`${exchange} p2p`:"market overview"}</p>
           </div>
 
-          <div className="mode-switcher">
-            <button className={`mode-btn ${mode==="p2p"?"active":""}`} onClick={()=>setMode("p2p")}>P2P</button>
-            <button className={`mode-btn ${mode==="market"?"active":""}`} onClick={()=>setMode("market")}>Market</button>
+          {/* Desktop mode switcher — hidden on mobile (replaced by bottom nav) */}
+          <div className="mode-switcher desktop-only-flex" style={{maxWidth:210}}>
+            <button className={`mode-btn ${mode==="p2p"?"active":""}`} onClick={()=>setMode("p2p")}>{t("p2p")}</button>
+            <button className={`mode-btn ${mode==="market"?"active":""}`} onClick={()=>setMode("market")}>{t("market")}</button>
           </div>
 
           {mode==="market"?(
             isMobile?(
-              <MobileMarketMode/>
+              <MobileMarketMode t={t}/>
             ):isPortrait?(
-              <div style={{
-                display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
-                minHeight:"60vh",gap:20,padding:32,textAlign:"center",
-              }}>
+              <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"60vh",gap:20,padding:32,textAlign:"center"}}>
                 <div style={{fontSize:52,animation:"spinCW 3s linear infinite",display:"inline-block",color:"white"}}>⟳</div>
-                <div style={{fontFamily:"Syne,sans-serif",fontSize:18,fontWeight:700,color:"#c8e0ff"}}>Rotate your phone</div>
-                <div style={{fontFamily:"DM Mono,monospace",fontSize:12,color:"rgba(120,170,255,0.45)",lineHeight:1.7}}>
-                  Market charts require<br/>landscape orientation
-                </div>
+                <div style={{fontFamily:"Syne,sans-serif",fontSize:18,fontWeight:700,color:"#c8e0ff"}}>{t("rotatePhone")}</div>
+                <div style={{fontFamily:"DM Mono,monospace",fontSize:12,color:"rgba(120,170,255,0.45)",lineHeight:1.7}}>{t("rotateDesc")}</div>
               </div>
             ):<MarketMode/>
           ):(<>
-            {/* ── Desktop: exchange tabs ── */}
+            {/* Mobile: BUY/SELL at very top */}
+            <div className="mobile-only-block" style={{marginBottom:10}}>
+              <div style={{display:"flex",gap:0,background:"rgba(4,10,26,0.88)",border:"1.5px solid rgba(70,120,220,0.18)",borderRadius:13,overflow:"hidden",padding:4,gap:4}}>
+                {[["BUY","buy-active","rgba(38,166,154,0.18)","#3effc0"],["SELL","sell-active","rgba(239,83,80,0.16)","#ff7878"]].map(([s,cls,bg,col])=>(
+                  <button key={s} onClick={()=>setSide(s)} style={{
+                    flex:1,padding:"12px",border:"none",cursor:"pointer",borderRadius:10,
+                    fontFamily:"DM Mono,monospace",fontSize:13,fontWeight:800,letterSpacing:"0.05em",
+                    background:side===s?bg:"transparent",
+                    color:side===s?col:"rgba(120,170,255,0.35)",
+                    transition:"all .25s",minHeight:46,
+                  }}>{s==="BUY"?t("buy"):t("sell")}</button>
+                ))}
+              </div>
+            </div>
+
+            {/* Desktop exchange tabs */}
             <div className="exchange-tabs desktop-only-flex">
               {EXCHANGES_CONFIG.map(ex=>(
                 <button key={ex.id} className={`ex-tab ${exchange===ex.id?"active":""}`} onClick={()=>setExchange(ex.id)}>
@@ -1379,7 +1453,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
               ))}
             </div>
 
-            {/* ── Desktop controls ── */}
+            {/* Desktop controls */}
             <div className="glass-strong controls desktop-only-block">
               <div className="ctrl-row">
                 <div className="sel-wrap">
@@ -1397,13 +1471,15 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
                 </div>
                 <div className="side-toggle" style={{marginLeft:4}}>
                   {["BUY","SELL"].map(s=>(
-                    <button key={s} className={`side-btn ${side===s?(s==="BUY"?"buy-active":"sell-active"):""}`} onClick={()=>setSide(s)}>{s}</button>
+                    <button key={s} className={`side-btn ${side===s?(s==="BUY"?"buy-active":"sell-active"):""}`} onClick={()=>setSide(s)}>
+                      {s==="BUY"?t("buy"):t("sell")}
+                    </button>
                   ))}
                 </div>
                 <div className="meta" style={{marginLeft:"auto"}}>
                   <button onClick={()=>setLiveMode(l=>!l)} className="live-btn" style={{background:liveMode?"rgba(38,166,154,0.12)":"rgba(60,80,150,0.12)"}}>
                     <span style={{width:6,height:6,borderRadius:"50%",flexShrink:0,background:liveMode?"#26a69a":"rgba(120,150,255,0.3)",boxShadow:liveMode?"0 0 6px #26a69a":"none",animation:liveMode?"pulse 1.6s infinite":"none"}}/>
-                    <span style={{fontFamily:"DM Mono,monospace",fontSize:9,letterSpacing:"0.1em",color:liveMode?"#26a69a":"rgba(100,140,255,0.35)",fontWeight:600}}>{liveMode?"LIVE":"OFF"}</span>
+                    <span style={{fontFamily:"DM Mono,monospace",fontSize:9,letterSpacing:"0.1em",color:liveMode?"#26a69a":"rgba(100,140,255,0.35)",fontWeight:600}}>{liveMode?t("live"):t("off")}</span>
                   </button>
                   <LiveDot lastUpdated={lastUpdated}/>
                   {liveMode&&<div className="countdown"><svg width="26" height="26" viewBox="0 0 32 32">
@@ -1413,25 +1489,25 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
                 </div>
               </div>
               <div className="ctrl-row" style={{flexWrap:"wrap"}}>
-                <div className="ctrl-label">Sort</div>
+                <div className="ctrl-label">{t("sortBy")}</div>
                 <div className="sort-tabs">
-                  {SORT_OPTIONS.map(o=>(
+                  {sortOptions.map(o=>(
                     <button key={o.id} className={`sort-btn ${sort===o.id?"active":""}`} onClick={()=>setSort(o.id)}>{o.label}</button>
                   ))}
                 </div>
                 <div className="divider"/>
-                <div className="ctrl-label">Rate</div>
+                <div className="ctrl-label">{t("completionRate")}</div>
                 <div className="rate-filter">
-                  {RATE_FILTERS.map(r=>(
+                  {rateFilters.map(r=>(
                     <button key={r.id} className={`rf-btn ${minRate===r.id?"active":""}`} onClick={()=>setMinRate(r.id)}>{r.label}</button>
                   ))}
                 </div>
               </div>
               <div className="ctrl-row">
-                <div className="ctrl-label">Pay</div>
+                <div className="ctrl-label">{t("paymentMethod")}</div>
                 <div className="sel-wrap" style={{flex:1}}>
                   <select value={paymentFilter} onChange={e=>setPaymentFilter(e.target.value)}>
-                    <option value="">All methods</option>
+                    <option value="">{t("allMethods")}</option>
                     {availablePayments.filter(p=>p).map(pm=>(
                       <option key={pm} value={pm}>{pm}</option>
                     ))}
@@ -1440,56 +1516,58 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
               </div>
             </div>
 
-            {/* ── Mobile filter button ── */}
+            {/* Mobile filter panel */}
             <MobileFilters
-              fiat={fiat} setFiat={setFiat}
-              crypto={crypto} setCrypto={setCrypto}
-              side={side} setSide={setSide}
-              exchange={exchange} setExchange={setExchange}
+              fiat={fiat} setFiat={setFiat} crypto={crypto} setCrypto={setCrypto}
+              side={side} setSide={setSide} exchange={exchange} setExchange={setExchange}
               paymentFilter={paymentFilter} setPaymentFilter={setPaymentFilter}
               minRate={minRate} setMinRate={setMinRate}
               sort={sort} setSort={setSort}
+              sortOptions={sortOptions} rateFilters={rateFilters}
               availablePayments={availablePayments}
               liveMode={liveMode} setLiveMode={setLiveMode}
               lastUpdated={lastUpdated} countdown={countdown} TTL={TTL}
+              t={t} lang={lang}
             />
 
-            <MarketSentiment/>
+            {/* Order: Spread → Calculator → Sentiment */}
             <div className="glass-strong" style={{overflow:"hidden",marginBottom:13}}>
-              <SpreadBanner/>
+              <SpreadBanner t={t}/>
             </div>
-            {!loading&&displayOffers.length>0&&<Calculator offers={displayOffers} side={side} fiat={fiat} crypto={crypto}/>}
+            {!loading&&displayOffers.length>0&&<Calculator offers={displayOffers} side={side} fiat={fiat} crypto={crypto} t={t}/>}
+            <MarketSentiment t={t}/>
 
             {/* Loading / error state */}
             {(loading&&displayOffers.length===0)||error||displayOffers.length===0?(
               <div className="glass-strong" style={{overflow:"hidden"}}>
                 {loading&&offers.length===0
-                  ?<div className="loading-state"><span className="pulse"/>fetching offers...</div>
-                  :error?<div className="error-state">⚠ {error}</div>
-                  :<div className="loading-state">no offers found</div>
+                  ?<div className="loading-state"><span className="pulse"/>{t("fetchingOffers")}</div>
+                  :error?<div className="error-state">⚠ {t("connectionError")}</div>
+                  :<div className="loading-state">{t("noOffersFound")}</div>
                 }
               </div>
             ):(
               <>
-                {/* ── Desktop table ── */}
+                {/* Desktop table */}
                 <div className="glass-strong desktop-table" style={{overflow:"hidden"}}>
                   <div className="table-header">
-                    <span className="th">Price</span>
-                    <span className="th">Min</span>
-                    <span className="th">Max / Rate</span>
-                    <span className="th">Fee</span>
+                    <span className="th">{t("price")}</span>
+                    <span className="th">{t("min")}</span>
+                    <span className="th">{t("max")} / {t("completionRate")}</span>
+                    <span className="th">{t("fee")}</span>
                     <span className="th">Advertiser</span>
                   </div>
                   {displayOffers.map((o,i)=>{
                     const isBest=o.price===bestPrice
                     const changed=changedRows[o.advertiser]
+                    const advName=stripEmoji(o.advertiser)
                     return(
-                      <div key={`${o.advertiser}-${i}`}
+                      <div key={`${advName}-${i}`}
                         className={`row ${isBest?"best":""} ${changed==="up"?"price-up":changed==="down"?"price-down":""}`}
                         style={{animationDelay:`${i*24}ms`}}>
                         <div className="price-cell" style={isBest?{color:"#26a69a"}:{}}>
                           <CopyPrice price={o.price} fiat={fiat}/>
-                          {isBest&&<span className="best-badge">best</span>}
+                          {isBest&&<span className="best-badge">{t("bestPrice")}</span>}
                         </div>
                         <div className="range-cell"><span className="range-label">MIN </span>{o.min_amount.toLocaleString()}</div>
                         <div className="range-cell">
@@ -1500,8 +1578,8 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
                         <div className="adv-wrap">
                           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:6}}>
                             {o.url
-                              ?<a className="adv-name" href={o.url} target="_blank" rel="noreferrer">{o.trusted&&<span style={{fontSize:11}}>⭐</span>}{o.advertiser}<span className="link-icon">↗</span></a>
-                              :<span className="adv-name">{o.trusted&&<span style={{fontSize:11}}>⭐</span>}{o.advertiser}</span>
+                              ?<a className="adv-name" href={o.url} target="_blank" rel="noreferrer">{o.trusted&&<span style={{fontSize:11}}>⭐</span>}{advName}<span className="link-icon">↗</span></a>
+                              :<span className="adv-name">{o.trusted&&<span style={{fontSize:11}}>⭐</span>}{advName}</span>
                             }
                             {o.rating_score!=null&&(
                               <span style={{fontFamily:"DM Mono,monospace",fontSize:9,padding:"1px 6px",borderRadius:6,
@@ -1524,17 +1602,42 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
                   })}
                 </div>
 
-                {/* ── Mobile cards ── */}
+                {/* Mobile cards */}
                 <div className="mobile-cards" style={{display:"none"}}>
                   {displayOffers.map((o,i)=>(
-                    <OfferCard key={`${o.advertiser}-${i}`} o={o} i={i}
-                      isBest={o.price===bestPrice} changed={changedRows[o.advertiser]} fiat={fiat}/>
+                    <OfferCard key={`${stripEmoji(o.advertiser)}-${i}`} o={o} i={i}
+                      isBest={o.price===bestPrice} changed={changedRows[o.advertiser]} fiat={fiat} t={t}/>
                   ))}
                 </div>
               </>
             )}
           </>)}
         </div>
+
+        {/* Bottom navigation — mobile only */}
+        <nav style={{
+          position:"fixed",bottom:0,left:0,right:0,zIndex:100,
+          background:"rgba(4,10,28,0.95)",backdropFilter:"blur(20px)",
+          borderTop:"1px solid rgba(70,120,220,0.18)",
+          display:"flex",alignItems:"stretch",
+          height:60,
+        }} className="mobile-only-block">
+          {[
+            {id:"p2p", icon:"⇄", label:t("p2p")},
+            {id:"market", icon:"◳", label:t("market")},
+          ].map(tab=>(
+            <button key={tab.id} onClick={()=>setMode(tab.id)} style={{
+              flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+              gap:3,border:"none",cursor:"pointer",background:"transparent",
+              color:mode===tab.id?"#26a69a":"rgba(100,150,255,0.35)",
+              fontFamily:"DM Mono,monospace",transition:"all .2s",
+              borderTop:mode===tab.id?"2px solid #26a69a":"2px solid transparent",
+            }}>
+              <span style={{fontSize:18,lineHeight:1}}>{tab.icon}</span>
+              <span style={{fontSize:9,letterSpacing:"0.1em",textTransform:"uppercase",fontWeight:600}}>{tab.label}</span>
+            </button>
+          ))}
+        </nav>
       </>
     )
   }

@@ -1600,8 +1600,8 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
               </div>
             ):(
               <>
-                {/* Desktop table */}
-                <div className="glass-strong desktop-table" style={{overflow:"hidden"}}>
+                {/* Desktop table — only rendered when not mobile */}
+                {!isMobile&&<div className="glass-strong" style={{overflow:"hidden"}}>
                   <div className="table-header">
                     <span className="th">{t("price")}</span>
                     <span className="th">{t("min")}</span>
@@ -1652,15 +1652,15 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
                       </div>
                     )
                   })}
-                </div>
+                </div>}
 
-                {/* Mobile cards */}
-                <div className="mobile-cards" style={{display:"none"}}>
+                {/* Mobile cards — only rendered on mobile */}
+                {isMobile&&<div>
                   {displayOffers.map((o,i)=>(
                     <OfferCard key={`${stripEmoji(o.advertiser)}-${i}`} o={o} i={i}
                       isBest={o.price===bestPrice} changed={changedRows[o.advertiser]} fiat={fiat} t={t}/>
                   ))}
-                </div>
+                </div>}
               </>
             )}
           </>)}

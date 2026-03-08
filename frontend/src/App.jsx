@@ -1328,9 +1328,14 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
         <style>{`
           @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap');
           *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-                    html,body{
-            max-width:100vw;
-            canvas { max-width: 100% !important; display: block; }
+                  html, body {
+              max-width: 100vw;
+              overflow-x: hidden;
+            }
+
+            canvas {
+              max-width: 100% !important;
+              display: block;
             }
           body{background:#040a18;min-height:100vh;font-family:'Syne',sans-serif;display:flex;justify-content:center;}
           body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;

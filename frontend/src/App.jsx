@@ -829,7 +829,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
               padding:"10px 14px",marginBottom:4,borderRadius:10,
               background:isBest?"rgba(38,166,154,0.07)":"rgba(8,16,42,0.5)",
               border:`1px solid ${isBest?"rgba(38,166,154,0.3)":"rgba(70,120,220,0.12)"}`,
-              animation:`fadeUp .25s forwards ${i*30}ms`,opacity:0,transform:"translateY(4px)",
+              animation:`fadeUp .25s forwards ${i*30}ms`,opacity:0,
             }}>
               <div>
                 <span style={{fontFamily:"DM Mono,monospace",fontSize:16,fontWeight:700,color:isBest?"#26a69a":"#e8f4ff"}}>{o.price.toFixed(3)}</span>
@@ -853,7 +853,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
         margin:"0 0 8px",padding:"12px 14px",borderRadius:12,
         background:isBest?"rgba(8,28,55,0.85)":"rgba(8,18,50,0.75)",
         border:`1.5px solid ${isBest?"rgba(38,166,154,0.45)":"rgba(70,120,220,0.18)"}`,
-        opacity:0,transform:"translateY(6px)",
+        opacity:0,
         animation:`fadeUp .3s forwards ${i*40}ms`,
       }}>
         {/* top row: price + advertiser */}
@@ -1386,7 +1386,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
           .row.best{background:rgba(38,166,154,0.05);animation:fadeUp .28s forwards,bestFlash .7s ease .05s;}
           .row.price-up{animation:fadeUp .28s forwards,priceUp 2s ease;}
           .row.price-down{animation:fadeUp .28s forwards,priceDown 2s ease;}
-          @keyframes fadeUp{to{opacity:1;transform:translateY(0);}}
+          @keyframes fadeUp{from{opacity:0}to{opacity:1;}}
           @keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
           @keyframes bestFlash{0%{background:rgba(38,166,154,0.16);}100%{background:rgba(38,166,154,0.05);}}
           @keyframes priceUp{0%,5%{background:rgba(38,166,154,0.16);}100%{background:transparent;}}
@@ -1415,7 +1415,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
           .mobile-only-block{display:none;}
           .mobile-only-flex{display:none;}
           @media(max-width:640px){
-            .wrapper{overflow-x:hidden;padding:16px 12px 80px;}
+            .wrapper{padding:16px 12px 80px;}
             .bg-orb{display:none;}
             .glass-strong{border-radius:14px;}
             .controls{padding:10px 12px;gap:8px;}
@@ -1585,13 +1585,13 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 
             {/* Ticker → Spread */}
             <SentimentTicker/>
-            <div className="glass-strong" style={{overflow:"hidden",marginBottom:13}}>
+            <div className="glass-strong" style={{marginBottom:13}}>
               <SpreadBanner t={t}/>
             </div>
 
             {/* Loading / error state */}
             {(loading&&displayOffers.length===0)||error||displayOffers.length===0?(
-              <div className="glass-strong" style={{overflow:"hidden"}}>
+              <div className="glass-strong">
                 {loading&&offers.length===0
                   ?<div className="loading-state"><span className="pulse"/>{t("fetchingOffers")}</div>
                   :error?<div className="error-state">⚠ {t("connectionError")}</div>

@@ -373,6 +373,29 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
     )
   }
 
+  // ─── Reusable filter sub-components (defined outside to prevent remount) ─────
+  function FilterRow({label,children}){
+    return(
+      <div style={{marginBottom:14}}>
+        <div style={{fontFamily:"DM Mono,monospace",fontSize:9,letterSpacing:"0.16em",textTransform:"uppercase",color:"rgba(80,130,255,0.4)",marginBottom:7}}>{label}</div>
+        {children}
+      </div>
+    )
+  }
+  function FilterSel({value,onChange,children}){
+    return(
+      <div style={{position:"relative"}}>
+        <select value={value} onChange={onChange} style={{
+          width:"100%",appearance:"none",background:"rgba(4,10,26,0.9)",
+          border:"1.5px solid rgba(70,120,220,0.2)",color:"#b8d4ff",
+          fontFamily:"DM Mono,monospace",fontSize:13,padding:"12px 32px 12px 12px",
+          borderRadius:10,outline:"none",cursor:"pointer",
+        }}>{children}</select>
+        <span style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",color:"rgba(70,120,220,0.5)",pointerEvents:"none",fontSize:10}}>▾</span>
+      </div>
+    )
+  }
+
   // ─── Mobile Filter Panel ─────────────────────────────────────────────────────
   function MobileFilters({fiat,setFiat,crypto,setCrypto,side,setSide,exchange,setExchange,
     paymentFilter,setPaymentFilter,minRate,setMinRate,sort,setSort,sortOptions,rateFilters,availablePayments,
@@ -383,23 +406,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
     const rateOpts=rateFilters||RATE_FILTERS_BASE.map(o=>({id:o.id,label:o.label}))
     const tr=t||(k=>k)
 
-    const Row=({label,children})=>(
-      <div style={{marginBottom:14}}>
-        <div style={{fontFamily:"DM Mono,monospace",fontSize:9,letterSpacing:"0.16em",textTransform:"uppercase",color:"rgba(80,130,255,0.4)",marginBottom:7}}>{label}</div>
-        {children}
-      </div>
-    )
-    const Sel=({value,onChange,children})=>(
-      <div style={{position:"relative"}}>
-        <select value={value} onChange={onChange} style={{
-          width:"100%",appearance:"none",background:"rgba(4,10,26,0.9)",
-          border:"1.5px solid rgba(70,120,220,0.2)",color:"#b8d4ff",
-          fontFamily:"DM Mono,monospace",fontSize:12,padding:"11px 32px 11px 12px",
-          borderRadius:10,outline:"none",cursor:"pointer",
-        }}>{children}</select>
-        <span style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",color:"rgba(70,120,220,0.5)",pointerEvents:"none",fontSize:10}}>▾</span>
-      </div>
-    )
+
 
     return(
       <div className="mobile-only-block" style={{marginBottom:12}}>
@@ -452,17 +459,17 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
         {/* Dropdown panel */}
         {open&&(
           <div className="glass-strong" style={{marginTop:8,padding:"18px 16px 10px",overflow:"hidden"}}>
-            <Row label={tr("fiatCurrency")}>
-              <Sel value={fiat} onChange={e=>setFiat(e.target.value)}>
+            <FilterRow label={tr("fiatCurrency")}>
+              <FilterSel value={fiat} onChange={e=>setFiat(e.target.value)}>
                 {FIATS.map(f=><option key={f}>{f}</option>)}
-              </Sel>
-            </Row>
-            <Row label={tr("crypto")}>
-              <Sel value={crypto} onChange={e=>setCrypto(e.target.value)}>
+              </FilterSel>
+            </FilterRow>
+            <FilterRow label={tr("crypto")}>
+              <FilterSel value={crypto} onChange={e=>setCrypto(e.target.value)}>
                 {CRYPTOS.map(c=><option key={c}>{c}</option>)}
-              </Sel>
-            </Row>
-            <Row label={tr("side")}>
+              </FilterSel>
+            </FilterRow>
+            <FilterRow label={tr("side")}>
               <div style={{display:"flex",gap:8}}>
                 {["BUY","SELL"].map(s=>(
                   <button key={s} onClick={()=>setSide(s)} style={{
@@ -474,8 +481,8 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
                   }}>{s}</button>
                 ))}
               </div>
-            </Row>
-            <Row label={tr("exchange")}>
+            </FilterRow>
+            <FilterRow label={tr("exchange")}>
               <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
                 {EXCHANGES_CONFIG.map(ex=>(
                   <button key={ex.id} onClick={()=>setExchange(ex.id)} style={{
@@ -491,14 +498,14 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
                   </button>
                 ))}
               </div>
-            </Row>
-            <Row label={tr("paymentMethod")}>
-              <Sel value={paymentFilter} onChange={e=>setPaymentFilter(e.target.value)}>
+            </FilterRow>
+            <FilterRow label={tr("paymentMethod")}>
+              <FilterSel value={paymentFilter} onChange={e=>setPaymentFilter(e.target.value)}>
                 <option value="">{tr("allMethods")}</option>
                 {availablePayments.filter(p=>p).map(pm=><option key={pm} value={pm}>{pm}</option>)}
-              </Sel>
-            </Row>
-            <Row label={tr("completionRate")}>
+              </FilterSel>
+            </FilterRow>
+            <FilterRow label={tr("completionRate")}>
               <div style={{display:"flex",gap:6}}>
                 {rateOpts.map(r=>(
                   <button key={r.id} onClick={()=>setMinRate(r.id)} style={{
@@ -510,8 +517,8 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
                   }}>{r.label}</button>
                 ))}
               </div>
-            </Row>
-            <Row label={tr("sortBy")}>
+            </FilterRow>
+            <FilterRow label={tr("sortBy")}>
               <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
                 {sortOpts.map(o=>(
                   <button key={o.id} onClick={()=>setSort(o.id)} style={{
@@ -523,7 +530,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
                   }}>{o.label}</button>
                 ))}
               </div>
-            </Row>
+            </FilterRow>
             <button onClick={()=>setOpen(false)} style={{
               width:"100%",padding:"13px",borderRadius:11,border:"none",cursor:"pointer",marginTop:4,minHeight:48,
               background:"linear-gradient(135deg,rgba(38,166,154,0.2),rgba(74,158,255,0.15))",

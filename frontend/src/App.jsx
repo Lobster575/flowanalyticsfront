@@ -1204,14 +1204,17 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
     const [countdown,setCountdown]=useState(25)
     const [error,setError]=useState(null)
     const [isPortrait,setIsPortrait]=useState(window.innerHeight>window.innerWidth&&window.innerWidth<640)
+    const [isMobile,setIsMobile]=useState(window.innerWidth<640)
     const prevPricesRef=useRef({})
     const [changedRows,setChangedRows]=useState({})
-    const isMobile=window.innerWidth<640
     const TTL=25
 
-    // Detect portrait mode
+    // Detect portrait + mobile — stable, won't flicker on keyboard open
     useEffect(()=>{
-      const check=()=>setIsPortrait(window.innerHeight>window.innerWidth&&window.innerWidth<640)
+      const check=()=>{
+        setIsPortrait(window.innerHeight>window.innerWidth&&window.innerWidth<640)
+        setIsMobile(window.innerWidth<640)
+      }
       window.addEventListener("resize",check);window.addEventListener("orientationchange",check)
       return()=>{window.removeEventListener("resize",check);window.removeEventListener("orientationchange",check)}
     },[])

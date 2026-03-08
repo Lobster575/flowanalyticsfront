@@ -36,7 +36,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
       live:"LIVE", off:"OFF", bestSpread:"Best Spread",
       marketSentiment:"Market Sentiment", quickCalc:"Quick Calculator",
       viewAdvertiser:"View advertiser",
-      bestPrice:"Best Price", sortLabel:"sort", rateLabel:"rate",
+      bestPrice:"Best Price", sortLabel:"sort", rateLabel:"rate", noOffers:"No offers for",
       min:"Min", max:"Max", fee:"Fee",
       rotatePhone:"Rotate your phone", rotateDesc:"Market charts require landscape orientation",
       noFavs:"Tap \u2605 to save favorites",
@@ -353,8 +353,12 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
           </div>
           <span style={{fontFamily:"DM Mono,monospace",fontSize:9,color:"rgba(80,130,255,0.3)",flexShrink:0,transition:"transform .25s",transform:collapsed?"rotate(0deg)":"rotate(180deg)"}}>▼</span>
         </div>
-        {/* Cards — collapsible */}
-        {!collapsed&&(
+        {/* Cards — smooth collapse via max-height */}
+        <div style={{
+          maxHeight:collapsed?0:340,
+          overflow:"hidden",
+          transition:"max-height 0.35s cubic-bezier(0.4,0,0.2,1)",
+        }}>
           <div style={{padding:"0 10px 12px",display:"flex",gap:8,alignItems:"stretch"}}>
             <SideCard label="BUY" price={spread.buy_price} currency={spread.fiat}
               advertiser={spread.buy_advertiser} exchange={spread.buy_exchange} url={spread.buy_url}
@@ -368,7 +372,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
               advertiser={spread.sell_advertiser} exchange={spread.sell_exchange} url={spread.sell_url}
               accentColor="#4a9eff" bg="rgba(74,158,255,0.06)"/>
           </div>
-        )}
+        </div>
       </div>
     )
   }
@@ -456,9 +460,13 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
           </div>
         )}
 
-        {/* Dropdown panel */}
-        {open&&(
-          <div className="glass-strong" style={{marginTop:8,padding:"18px 16px 10px",overflow:"hidden"}}>
+        {/* Dropdown panel — smooth open/close */}
+        <div style={{
+          maxHeight:open?900:0,
+          overflow:"hidden",
+          transition:"max-height 0.38s cubic-bezier(0.4,0,0.2,1)",
+        }}>
+          <div className="glass-strong" style={{marginTop:8,padding:"18px 16px 10px",overflow:"visible"}}>
             <FilterRow label={tr("fiatCurrency")}>
               <FilterSel value={fiat} onChange={e=>setFiat(e.target.value)}>
                 {FIATS.map(f=><option key={f}>{f}</option>)}
@@ -538,7 +546,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
               border:"1.5px solid rgba(38,166,154,0.3)",
             }}>{tr("applyFilters")} ✓</button>
           </div>
-        )}
+        </div>
       </div>
     )
   }
@@ -677,77 +685,62 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
   }
 
     // ─── Market Sentiment ─────────────────────────────────────────────────────────
-  function MarketSentiment({t}){
+  function SentimentTicker(){
     const [coins,setCoins]=useState([])
-    const [collapsed,setCollapsed]=useState(true)
     useEffect(()=>{
       const load=async()=>{
         try{
           const res=await fetch("https://flowanalytics-production.up.railway.app/market/trending")
           const json=await res.json()
-          const raw=json.data||[]
-          // Normalize: pick the change field whichever name the API uses
-          const parsed=raw.slice(0,8).map(c=>({
-            symbol:(c.symbol||c.name||"").replace(/USDT$/,"").replace(/BUSD$/,""),
-            chg: parseFloat(c.price_change_percent ?? c.priceChangePercent ?? c.change_24h ?? c.change ?? 0),
+          const parsed=(json.data||[]).slice(0,20).map(c=>({
+            symbol:(c.symbol||"").replace(/USDT$/,""),
+            chg:parseFloat(c.change??0),
           })).filter(c=>c.symbol)
           setCoins(parsed)
         }catch(e){}
       }
       load();const iv=setInterval(load,60000);return()=>clearInterval(iv)
     },[])
-
-    // headline tickers (BTC, ETH, first stablecoin)
-    const btc=coins.find(c=>c.symbol==="BTC")
-    const eth=coins.find(c=>c.symbol==="ETH")
-    const stable=coins.find(c=>["USDC","USDT","DAI"].includes(c.symbol))
-
-    const Chip=({label,chg})=>{
-      const up=chg>=0
-      const col=up?"#26a69a":"#ef5350"
-      return(
-        <div style={{display:"flex",alignItems:"center",gap:4,padding:"4px 8px",borderRadius:7,
-          background:up?"rgba(38,166,154,0.08)":"rgba(239,83,80,0.08)",
-          border:`1px solid ${col}25`,flexShrink:0}}>
-          <span style={{fontFamily:"DM Mono,monospace",fontSize:10,color:"rgba(180,210,255,0.55)"}}>{label}</span>
-          <span style={{fontFamily:"DM Mono,monospace",fontSize:10,fontWeight:700,color:col}}>{up?"+":""}{chg.toFixed(2)}%</span>
-        </div>
-      )
-    }
+    if(!coins.length)return null
+    const items=[...coins,...coins]
     return(
-      <div className="glass-strong" style={{marginBottom:13,overflow:"hidden"}}>
-        {/* Header — always visible, click to toggle */}
-        <div onClick={()=>setCollapsed(c=>!c)}
-          style={{padding:"10px 14px",display:"flex",alignItems:"center",gap:8,cursor:"pointer",userSelect:"none",flexWrap:"nowrap",overflow:"hidden"}}>
-          <span style={{fontSize:8,letterSpacing:"0.16em",textTransform:"uppercase",color:"rgba(120,170,255,0.45)",fontFamily:"DM Mono,monospace",flexShrink:0}}>📊 Sentiment</span>
-          <div style={{flex:1,height:1,background:"rgba(80,130,255,0.08)",minWidth:4}}/>
-          {/* Show 2-3 headline chips inline when collapsed */}
-          <div style={{display:"flex",gap:5,alignItems:"center",flexShrink:0}}>
-            {btc&&<Chip label="BTC" chg={btc.chg}/>}
-            {eth&&<Chip label="ETH" chg={eth.chg}/>}
-            {stable&&<Chip label={stable.symbol} chg={stable.chg}/>}
-          </div>
-          <span style={{fontFamily:"DM Mono,monospace",fontSize:9,color:"rgba(80,130,255,0.3)",marginLeft:4,flexShrink:0,
-            transition:"transform .2s",transform:collapsed?"rotate(0deg)":"rotate(180deg)"}}>▼</span>
+      <div style={{overflow:"hidden",background:"rgba(4,10,26,0.6)",border:"1px solid rgba(70,120,220,0.12)",borderRadius:10,padding:"7px 0",marginBottom:10,position:"relative",userSelect:"none"}}>
+        <div style={{position:"absolute",left:0,top:0,bottom:0,width:28,background:"linear-gradient(90deg,rgba(4,10,26,0.9),transparent)",zIndex:1,pointerEvents:"none"}}/>
+        <div style={{position:"absolute",right:0,top:0,bottom:0,width:28,background:"linear-gradient(270deg,rgba(4,10,26,0.9),transparent)",zIndex:1,pointerEvents:"none"}}/>
+        <div style={{display:"inline-flex",animation:"ticker 38s linear infinite",whiteSpace:"nowrap"}}>
+          {items.map((c,i)=>{
+            const up=c.chg>=0
+            const col=up?"#26a69a":"#ef5350"
+            return(
+              <span key={i} style={{fontFamily:"DM Mono,monospace",fontSize:11,padding:"0 10px",display:"inline-flex",alignItems:"center",gap:5,flexShrink:0}}>
+                <span style={{color:"rgba(180,210,255,0.5)",fontWeight:600}}>{c.symbol}</span>
+                <span style={{color:col,fontWeight:700}}>{up?"+":""}{c.chg.toFixed(1)}%</span>
+                <span style={{color:"rgba(70,120,220,0.18)",fontSize:8,margin:"0 2px"}}>•</span>
+              </span>
+            )
+          })}
         </div>
-        {/* Expanded: all coins grid */}
-        {!collapsed&&(
-          <div style={{padding:"2px 14px 12px",display:"flex",gap:6,flexWrap:"wrap"}}>
-            {coins.map((c,i)=><Chip key={i} label={c.symbol} chg={c.chg}/>)}
-          </div>
-        )}
       </div>
     )
   }
 
-  // ─── Calculator ───────────────────────────────────────────────────────────────
-  function Calculator({offers,side,fiat:globalFiat,crypto:globalCrypto,t}){
+  // ─── Calculator (used as standalone tab) ───────────────────────────────────
+  function CalcTab({t}){
+    const tr=t||(k=>k)
+    const [fiat,setFiat]=useState("PLN")
+    const [crypto,setCrypto]=useState("USDT")
+    const [side,setSide]=useState("BUY")
     const [amount,setAmount]=useState("")
-    const fromCur=side==="BUY"?globalFiat:globalCrypto
-    const toCur=side==="BUY"?globalCrypto:globalFiat
+    const [offers,setOffers]=useState([])
+    const [loading,setLoading]=useState(false)
+    const API="https://flowanalytics-production.up.railway.app"
+    useEffect(()=>{
+      setLoading(true)
+      fetch(`${API}/p2p?fiat=${fiat}&crypto=${crypto}&side=${side}&exchange=bybit&sort=price`)
+        .then(r=>r.json()).then(d=>{ setOffers(d.offers||[]); setLoading(false) }).catch(()=>setLoading(false))
+    },[fiat,crypto,side])
     const num=parseFloat(amount)||0
     const valid=num>0?offers.filter(o=>num>=o.min_amount&&num<=o.max_amount):offers
-    const outOfRange=num>0&&valid.length===0
     const best=valid.length?valid.reduce((a,b)=>{
       const ea=side==="BUY"?a.price*(1+(a.commission||0)/100):a.price*(1-(a.commission||0)/100)
       const eb=side==="BUY"?b.price*(1+(b.commission||0)/100):b.price*(1-(b.commission||0)/100)
@@ -755,56 +748,99 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
     }):null
     const effP=best?(side==="BUY"?best.price*(1+(best.commission||0)/100):best.price*(1-(best.commission||0)/100)):null
     const result=effP&&num?(side==="BUY"?num/effP:num*effP):null
-    const [calcOpen,setCalcOpen]=useState(true)
+    const outOfRange=num>0&&valid.length===0
+    const fromCur=side==="BUY"?fiat:crypto
+    const toCur=side==="BUY"?crypto:fiat
     return(
-      <div className="glass-strong" style={{marginBottom:13,overflow:"hidden"}}>
-        <div onClick={()=>setCalcOpen(o=>!o)} style={{padding:"10px 16px",display:"flex",alignItems:"center",gap:8,cursor:"pointer",userSelect:"none"}}>
-          <span style={{fontSize:8,letterSpacing:"0.18em",textTransform:"uppercase",color:"rgba(120,170,255,0.45)",fontFamily:"DM Mono,monospace"}}>⚡ Quick Calculator</span>
-          <div style={{flex:1,height:1,background:"rgba(80,130,255,0.08)"}}/>
-          <span style={{fontFamily:"DM Mono,monospace",fontSize:9,color:"rgba(80,130,255,0.3)",transition:"transform .2s",transform:calcOpen?"rotate(180deg)":"rotate(0deg)"}}>▼</span>
+      <div style={{padding:"4px 0"}}>
+        {/* BUY / SELL */}
+        <div style={{display:"flex",gap:4,background:"rgba(4,10,26,0.88)",border:"1.5px solid rgba(70,120,220,0.18)",borderRadius:13,overflow:"hidden",padding:4,marginBottom:14}}>
+          {[["BUY","rgba(38,166,154,0.18)","#3effc0"],["SELL","rgba(239,83,80,0.16)","#ff7878"]].map(([s,bg,col])=>(
+            <button key={s} onClick={()=>setSide(s)} style={{
+              flex:1,padding:"11px",border:"none",cursor:"pointer",borderRadius:10,
+              fontFamily:"DM Mono,monospace",fontSize:13,fontWeight:800,
+              background:side===s?bg:"transparent",color:side===s?col:"rgba(120,170,255,0.35)",
+              transition:"all .2s",minHeight:42,
+            }}>{s==="BUY"?tr("buy"):tr("sell")}</button>
+          ))}
         </div>
-        {calcOpen&&<div style={{padding:"0 16px 15px"}}>
+        {/* Currency selectors */}
+        <div className="glass-strong" style={{padding:"14px",marginBottom:10,display:"flex",gap:10,alignItems:"center"}}>
+          <div style={{flex:1}}>
+            <div style={{fontFamily:"DM Mono,monospace",fontSize:8,letterSpacing:"0.15em",color:"rgba(80,130,255,0.4)",marginBottom:5,textTransform:"uppercase"}}>{tr("fiatCurrency")}</div>
+            <FilterSel value={fiat} onChange={e=>setFiat(e.target.value)}>
+              {FIATS.map(f=><option key={f}>{f}</option>)}
+            </FilterSel>
+          </div>
+          <span style={{color:"rgba(100,150,255,0.3)",fontSize:18,marginTop:14,flexShrink:0}}>⇄</span>
+          <div style={{flex:1}}>
+            <div style={{fontFamily:"DM Mono,monospace",fontSize:8,letterSpacing:"0.15em",color:"rgba(80,130,255,0.4)",marginBottom:5,textTransform:"uppercase"}}>{tr("crypto")}</div>
+            <FilterSel value={crypto} onChange={e=>setCrypto(e.target.value)}>
+              {CRYPTOS.map(c=><option key={c}>{c}</option>)}
+            </FilterSel>
+          </div>
+        </div>
+        {/* Amount input */}
+        <div className="glass-strong" style={{padding:"14px",marginBottom:10}}>
+          <div style={{fontFamily:"DM Mono,monospace",fontSize:8,letterSpacing:"0.15em",color:"rgba(80,130,255,0.4)",marginBottom:8,textTransform:"uppercase"}}>{tr("quickCalc")}</div>
           <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
             <div style={{flex:1,minWidth:120,display:"flex"}}>
               <input type="number" min="0" value={amount}
                 onChange={e=>{ const v=e.target.value; if(v===""||parseFloat(v)>=0) setAmount(v) }}
                 placeholder="0.00"
-                style={{flex:1,background:"rgba(4,10,28,0.8)",border:"1px solid rgba(80,130,255,0.18)",borderRight:"none",borderRadius:"10px 0 0 10px",padding:"10px 8px",fontFamily:"DM Mono,monospace",fontSize:15,color:"#fff",outline:"none",minWidth:0}}
+                style={{flex:1,background:"rgba(4,10,28,0.8)",border:"1px solid rgba(80,130,255,0.18)",borderRight:"none",borderRadius:"10px 0 0 10px",padding:"11px 8px",fontFamily:"DM Mono,monospace",fontSize:16,color:"#fff",outline:"none",minWidth:0}}
                 onFocus={e=>e.target.style.borderColor="rgba(80,130,255,0.45)"}
                 onBlur={e=>e.target.style.borderColor="rgba(80,130,255,0.18)"}/>
-              <div style={{background:"rgba(8,20,55,0.9)",border:"1px solid rgba(80,130,255,0.18)",borderLeft:"none",borderRadius:"0 10px 10px 0",padding:"8px 12px",display:"flex",alignItems:"center",fontFamily:"DM Mono,monospace",fontSize:12,color:"rgba(150,190,255,0.7)",whiteSpace:"nowrap"}}>
-                {fromCur}
-              </div>
+              <div style={{background:"rgba(8,20,55,0.9)",border:"1px solid rgba(80,130,255,0.18)",borderLeft:"none",borderRadius:"0 10px 10px 0",padding:"8px 12px",display:"flex",alignItems:"center",fontFamily:"DM Mono,monospace",fontSize:12,color:"rgba(150,190,255,0.7)",whiteSpace:"nowrap"}}>{fromCur}</div>
             </div>
             <span style={{color:"rgba(100,150,255,0.4)",fontSize:16,flexShrink:0}}>→</span>
-            <div style={{flex:1,minWidth:120,background:"rgba(4,10,28,0.6)",border:`1px solid ${outOfRange?"rgba(239,83,80,0.3)":"rgba(80,130,255,0.1)"}`,borderRadius:10,padding:"10px 12px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}}>
-              <span style={{fontFamily:"DM Mono,monospace",fontSize:16,fontWeight:600,color:outOfRange?"#ef5350":result?"#26a69a":"rgba(80,130,255,0.2)"}}>
-                {result?result.toFixed(side==="BUY"?4:2):"—"}
+            <div style={{flex:1,minWidth:120,background:"rgba(4,10,28,0.6)",border:`1px solid ${outOfRange?"rgba(239,83,80,0.3)":"rgba(80,130,255,0.1)"}`,borderRadius:10,padding:"11px 12px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}}>
+              <span style={{fontFamily:"DM Mono,monospace",fontSize:17,fontWeight:600,color:outOfRange?"#ef5350":result?"#26a69a":"rgba(80,130,255,0.2)"}}>
+                {loading?"⋯":result?result.toFixed(side==="BUY"?4:2):"—"}
               </span>
-              <span style={{fontFamily:"DM Mono,monospace",fontSize:12,color:"rgba(150,190,255,0.5)",whiteSpace:"nowrap"}}>
-                {toCur}
-              </span>
+              <span style={{fontFamily:"DM Mono,monospace",fontSize:12,color:"rgba(150,190,255,0.5)",whiteSpace:"nowrap"}}>{toCur}</span>
             </div>
           </div>
           {outOfRange&&num>0&&(
             <div style={{marginTop:8,fontFamily:"DM Mono,monospace",fontSize:11,color:"#ef5350"}}>
-              ⚠ No offers for {num.toLocaleString()} {fromCur}
-              {offers.length>0&&` — range: ${offers[0].min_amount.toLocaleString()}–${Math.max(...offers.map(o=>o.max_amount)).toLocaleString()}`}
+              ⚠ {tr("noOffers")||"No offers for"} {num.toLocaleString()} {fromCur}
             </div>
           )}
-          {best&&result&&!outOfRange&&(
-            <div style={{marginTop:10,padding:"8px 12px",background:"rgba(80,130,255,0.05)",borderRadius:8,border:"1px solid rgba(80,130,255,0.1)",display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-              <span style={{fontFamily:"DM Mono,monospace",fontSize:10,color:"rgba(100,150,255,0.4)",flexShrink:0}}>via</span>
-              {best.url
-                ?<a href={best.url} target="_blank" rel="noreferrer" style={{fontFamily:"DM Mono,monospace",fontSize:11,color:"#5ba8ff",textDecoration:"none",minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{best.trusted&&"⭐ "}{best.advertiser} ↗</a>
-                :<span style={{fontFamily:"DM Mono,monospace",fontSize:11,color:"#5ba8ff",minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{best.trusted&&"⭐ "}{best.advertiser}</span>
-              }
-              <span style={{fontFamily:"DM Mono,monospace",fontSize:10,color:"rgba(100,150,255,0.4)",marginLeft:"auto",flexShrink:0}}>
-                @ {best.price.toFixed(3)}{best.commission>0&&<span style={{color:"rgba(239,83,80,0.6)"}}> +{best.commission}%</span>}
-              </span>
+        </div>
+        {/* Best offer detail */}
+        {best&&result&&!outOfRange&&(
+          <div className="glass-strong" style={{padding:"12px 14px",display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+            <span style={{fontFamily:"DM Mono,monospace",fontSize:10,color:"rgba(100,150,255,0.4)",flexShrink:0}}>via</span>
+            {best.url
+              ?<a href={best.url} target="_blank" rel="noreferrer" style={{fontFamily:"DM Mono,monospace",fontSize:11,color:"#5ba8ff",textDecoration:"none",minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{best.trusted&&"⭐ "}{stripEmoji(best.advertiser)} ↗</a>
+              :<span style={{fontFamily:"DM Mono,monospace",fontSize:11,color:"#5ba8ff"}}>{stripEmoji(best.advertiser)}</span>
+            }
+            <span style={{fontFamily:"DM Mono,monospace",fontSize:10,color:"rgba(100,150,255,0.4)",marginLeft:"auto",flexShrink:0}}>
+              @ {best.price.toFixed(3)}{best.commission>0&&<span style={{color:"rgba(239,83,80,0.6)"}}> +{best.commission}%</span>}
+            </span>
+          </div>
+        )}
+        {/* Top offers list */}
+        {!loading&&offers.slice(0,8).map((o,i)=>{
+          const isBest=o===best
+          return(
+            <div key={i} style={{
+              display:"flex",justifyContent:"space-between",alignItems:"center",
+              padding:"10px 14px",marginBottom:4,borderRadius:10,
+              background:isBest?"rgba(38,166,154,0.07)":"rgba(8,16,42,0.5)",
+              border:`1px solid ${isBest?"rgba(38,166,154,0.3)":"rgba(70,120,220,0.12)"}`,
+              animation:`fadeUp .25s forwards ${i*30}ms`,opacity:0,transform:"translateY(4px)",
+            }}>
+              <div>
+                <span style={{fontFamily:"DM Mono,monospace",fontSize:16,fontWeight:700,color:isBest?"#26a69a":"#e8f4ff"}}>{o.price.toFixed(3)}</span>
+                <span style={{fontFamily:"DM Mono,monospace",fontSize:10,color:"rgba(120,170,255,0.4)",marginLeft:5}}>{fiat}</span>
+              </div>
+              <div style={{fontFamily:"DM Mono,monospace",fontSize:10,color:"rgba(120,170,255,0.45)",maxWidth:120,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textAlign:"right"}}>
+                {stripEmoji(o.advertiser)}
+              </div>
             </div>
-          )}
-        </div>}
+          )
+        })}
       </div>
     )
   }
@@ -814,7 +850,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
     const exConf=EXCHANGES_CONFIG.find(e=>e.label===o.exchange)
     return(
       <div style={{
-        margin:"0 0 10px",padding:"16px",borderRadius:14,
+        margin:"0 0 8px",padding:"12px 14px",borderRadius:12,
         background:isBest?"rgba(8,28,55,0.85)":"rgba(8,18,50,0.75)",
         border:`1.5px solid ${isBest?"rgba(38,166,154,0.45)":"rgba(70,120,220,0.18)"}`,
         opacity:0,transform:"translateY(6px)",
@@ -823,7 +859,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
         {/* top row: price + advertiser */}
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
           <div>
-            <div style={{fontFamily:"DM Mono,monospace",fontSize:24,fontWeight:700,color:isBest?"#26a69a":"#e8f4ff",lineHeight:1}}>
+            <div style={{fontFamily:"DM Mono,monospace",fontSize:20,fontWeight:700,color:isBest?"#26a69a":"#e8f4ff",lineHeight:1}}>
               {o.price.toFixed(3)}
               <span style={{fontSize:12,color:"rgba(120,170,255,0.45)",fontWeight:400,marginLeft:5}}>{fiat}</span>
             </div>
@@ -1194,7 +1230,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 
   export default function App(){
     const [intro,setIntro]=useState(true)
-    const [mode,setMode]=useState("p2p")
+    const [mode,setMode]=useState("p2p")  // "p2p" | "calc" | "market"
     const [lang,setLang]=useState("en")
     const t=k=>TR[lang][k]||TR.en[k]||k
     const [offers,setOffers]=useState([])
@@ -1351,6 +1387,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
           .row.price-up{animation:fadeUp .28s forwards,priceUp 2s ease;}
           .row.price-down{animation:fadeUp .28s forwards,priceDown 2s ease;}
           @keyframes fadeUp{to{opacity:1;transform:translateY(0);}}
+          @keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
           @keyframes bestFlash{0%{background:rgba(38,166,154,0.16);}100%{background:rgba(38,166,154,0.05);}}
           @keyframes priceUp{0%,5%{background:rgba(38,166,154,0.16);}100%{background:transparent;}}
           @keyframes priceDown{0%,5%{background:rgba(239,83,80,0.14);}100%{background:transparent;}}
@@ -1432,7 +1469,9 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
             <button className={`mode-btn ${mode==="market"?"active":""}`} onClick={()=>setMode("market")}>{t("market")}</button>
           </div>
 
-          {mode==="market"?(
+          {mode==="calc"?(
+            <CalcTab t={t}/>
+          ):mode==="market"?(
             isMobile?(
               <MobileMarketMode t={t}/>
             ):isPortrait?(
@@ -1452,7 +1491,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
                     fontFamily:"DM Mono,monospace",fontSize:13,fontWeight:800,letterSpacing:"0.05em",
                     background:side===s?bg:"transparent",
                     color:side===s?col:"rgba(120,170,255,0.35)",
-                    transition:"all .25s",minHeight:46,
+                    transition:"all .25s",minHeight:40,
                   }}>{s==="BUY"?t("buy"):t("sell")}</button>
                 ))}
               </div>
@@ -1544,12 +1583,11 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
               t={t} lang={lang}
             />
 
-            {/* Order: Spread → Calculator → Sentiment */}
+            {/* Ticker → Spread */}
+            <SentimentTicker/>
             <div className="glass-strong" style={{overflow:"hidden",marginBottom:13}}>
               <SpreadBanner t={t}/>
             </div>
-            {!loading&&displayOffers.length>0&&<Calculator offers={displayOffers} side={side} fiat={fiat} crypto={crypto} t={t}/>}
-            <MarketSentiment t={t}/>
 
             {/* Loading / error state */}
             {(loading&&displayOffers.length===0)||error||displayOffers.length===0?(
@@ -1637,13 +1675,14 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
           paddingBottom:"env(safe-area-inset-bottom,0px)",
         }}>
           {[
-            {id:"p2p", icon:"P2P", label:t("p2p"), svg:<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 7h14M7 3l-4 4 4 4M13 17l4-4-4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>},
-            {id:"market", icon:"◳", label:t("market"), svg:<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polyline points="2,14 7,9 11,12 18,5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>},
+            {id:"p2p", label:t("p2p"), svg:<svg width="19" height="19" viewBox="0 0 20 20" fill="none"><path d="M3 7h14M7 3l-4 4 4 4M13 17l4-4-4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>},
+            {id:"calc", label:t("quickCalc")||"Calc", svg:<svg width="19" height="19" viewBox="0 0 20 20" fill="none"><rect x="3" y="2" width="14" height="16" rx="2" stroke="currentColor" strokeWidth="1.6"/><line x1="7" y1="7" x2="13" y2="7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><line x1="7" y1="11" x2="9" y2="11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><line x1="11" y1="11" x2="13" y2="11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><line x1="7" y1="14" x2="9" y2="14" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><line x1="11" y1="14" x2="13" y2="14" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>},
+            {id:"market", label:t("market"), svg:<svg width="19" height="19" viewBox="0 0 20 20" fill="none"><polyline points="2,14 7,9 11,12 18,5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>},
           ].map(tab=>(
             <button key={tab.id} onClick={()=>setMode(tab.id)} style={{
               flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
-              gap:4,border:"none",cursor:"pointer",background:"transparent",padding:0,
-              color:mode===tab.id?"#26a69a":"rgba(100,150,255,0.3)",
+              gap:3,border:"none",cursor:"pointer",background:"transparent",padding:0,
+              color:mode===tab.id?"#26a69a":"rgba(100,150,255,0.28)",
               fontFamily:"DM Mono,monospace",fontWeight:700,transition:"color .2s",
               borderTop:mode===tab.id?"2px solid #26a69a":"2px solid transparent",
               minHeight:56,

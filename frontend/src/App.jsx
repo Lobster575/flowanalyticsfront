@@ -1329,14 +1329,14 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
           @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap');
           *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
                   html, body {
-              max-width: 100vw;
-              overflow-x: hidden;
-            }
+  max-width: 100vw;
+  overflow-x: hidden;
+}
 
-            canvas {
-              max-width: 100% !important;
-              display: block;
-            }
+canvas {
+  max-width: 100% !important;
+  display: block;
+}
           body{background:#040a18;min-height:100vh;font-family:'Syne',sans-serif;display:flex;justify-content:center;}
           body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
             background-image:linear-gradient(rgba(50,100,220,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(50,100,220,0.04) 1px,transparent 1px);
@@ -1420,7 +1420,12 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
           .mobile-only-block{display:none;}
           .mobile-only-flex{display:none;}
           @media(max-width:640px){
-            .wrapper{padding:16px 12px 80px;}
+            .wrapper{
+              max-width:1020px;
+              width:100%;
+              min-width:0;
+              overflow-x:hidden;
+            }
             .bg-orb{display:none;}
             .glass-strong{border-radius:14px;}
             .controls{padding:10px 12px;gap:8px;}

@@ -302,19 +302,10 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
   }
 
   // ─── Spread Banner ────────────────────────────────────────────────────────────
-  function SpreadBanner({t}){
-    const [spread,setSpread]=useState(null)
-    const [collapsed,setCollapsed]=useState(false)
-    useEffect(()=>{
-      const load=()=>fetch("https://flowanalytics-production.up.railway.app/p2p/spread")
-        .then(r=>r.json()).then(d=>{ if(d.spread) setSpread(d.spread) }).catch(()=>{})
-      load();const iv=setInterval(load,60000);return()=>clearInterval(iv)
-    },[])
-    if(!spread)return null
-    const pct=spread.spread_pct
-    const pctColor=pct>1?"#3dffa0":pct>0?"#f0b90b":"#ef5350"
-    const SideCard=({label,price,currency,advertiser,exchange,url,accentColor,bg})=>(
-      <div style={{flex:1,minWidth:0,background:bg,borderRadius:12,padding:"11px 12px 11px",border:`1.5px solid ${accentColor}30`,display:"flex",flexDirection:"column",gap:8}}>
+  // SideCard outside SpreadBanner to prevent remount on every render
+  function SideCard({label,price,currency,advertiser,exchange,url,accentColor,bg,t}){
+    return(
+      <div style={{flex:1,minWidth:0,background:bg,borderRadius:12,padding:"11px 12px",border:`1.5px solid ${accentColor}30`,display:"flex",flexDirection:"column",gap:8}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
           <span style={{fontFamily:"DM Mono,monospace",fontSize:9,letterSpacing:"0.2em",textTransform:"uppercase",color:`${accentColor}cc`,fontWeight:600}}>{label}</span>
           <span style={{fontFamily:"DM Mono,monospace",fontSize:9,color:"rgba(100,140,255,0.4)",background:"rgba(80,120,255,0.08)",padding:"2px 8px",borderRadius:20,border:"1px solid rgba(80,120,255,0.12)"}}>{exchange}</span>
@@ -329,50 +320,75 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
         {url&&(
           <a href={url} target="_blank" rel="noreferrer" style={{
             display:"flex",alignItems:"center",justifyContent:"center",gap:5,
-            padding:"10px 14px",borderRadius:10,border:`1.5px solid ${accentColor}50`,
+            padding:"9px 12px",borderRadius:10,border:`1.5px solid ${accentColor}50`,
             background:`${accentColor}18`,color:accentColor,
             fontFamily:"DM Mono,monospace",fontSize:11,fontWeight:700,
-            textDecoration:"none",transition:"all .18s",cursor:"pointer",minHeight:42,
-          }}
-          onMouseEnter={e=>{e.currentTarget.style.background=`${accentColor}28`}}
-          onMouseLeave={e=>{e.currentTarget.style.background=`${accentColor}18`}}>
+            textDecoration:"none",minHeight:40,touchAction:"manipulation",
+          }}>
             {(t&&t("viewAdvertiser"))||"View advertiser"} ↗
           </a>
         )}
       </div>
     )
+  }
+
+  function SpreadBanner({t}){
+    const [spread,setSpread]=useState(null)
+    const [loading,setLoading]=useState(true)
+    const [collapsed,setCollapsed]=useState(false)
+    useEffect(()=>{
+      const load=()=>{
+        setLoading(true)
+        fetch("https://flowanalytics-production.up.railway.app/p2p/spread")
+          .then(r=>r.json())
+          .then(d=>{ if(d.spread) setSpread(d.spread); setLoading(false) })
+          .catch(()=>setLoading(false))
+      }
+      load();const iv=setInterval(load,60000);return()=>clearInterval(iv)
+    },[])
+
+    const pct=spread?.spread_pct??0
+    const pctColor=pct>1?"#3dffa0":pct>0?"#f0b90b":"#ef5350"
+
     return(
       <div style={{background:"linear-gradient(135deg,rgba(38,166,154,0.07) 0%,rgba(20,40,100,0.04) 100%)"}}>
-        {/* Header — click to collapse */}
-        <div onClick={()=>setCollapsed(c=>!c)} style={{padding:"10px 14px",display:"flex",alignItems:"center",gap:10,cursor:"pointer",userSelect:"none"}}>
-          <span style={{fontSize:8,letterSpacing:"0.22em",textTransform:"uppercase",color:"rgba(38,166,154,0.5)",fontFamily:"DM Mono,monospace"}}>⚡ Best Spread</span>
+        {/* Header — always visible, click to collapse */}
+        <div onPointerDown={()=>setCollapsed(c=>!c)} style={{padding:"10px 14px",display:"flex",alignItems:"center",gap:10,cursor:"pointer",userSelect:"none",touchAction:"manipulation"}}>
+          <span style={{fontSize:8,letterSpacing:"0.22em",textTransform:"uppercase",color:"rgba(38,166,154,0.5)",fontFamily:"DM Mono,monospace"}}>⚡ {(t&&t("bestSpread"))||"Best Spread"}</span>
           <div style={{flex:1,height:1,background:"rgba(38,166,154,0.1)"}}/>
-          <div style={{fontFamily:"DM Mono,monospace",fontSize:"clamp(13px,3.5vw,18px)",fontWeight:900,color:pctColor,
-            background:`${pctColor}18`,padding:"4px 14px",borderRadius:24,border:`1.5px solid ${pctColor}40`,
-            boxShadow:`0 0 18px ${pctColor}30`,letterSpacing:"-0.01em",flexShrink:0}}>
-            {pct>0?"+":""}{pct}%
-          </div>
+          {loading&&!spread
+            ? <div style={{fontFamily:"DM Mono,monospace",fontSize:10,color:"rgba(38,166,154,0.4)",padding:"4px 12px",borderRadius:20,border:"1px solid rgba(38,166,154,0.15)",animation:"pulse 1.4s infinite"}}>loading...</div>
+            : <div style={{fontFamily:"DM Mono,monospace",fontSize:"clamp(13px,3.5vw,18px)",fontWeight:900,color:pctColor,
+                background:`${pctColor}18`,padding:"4px 14px",borderRadius:24,border:`1.5px solid ${pctColor}40`,
+                boxShadow:`0 0 18px ${pctColor}30`,letterSpacing:"-0.01em",flexShrink:0}}>
+                {pct>0?"+":""}{pct}%
+              </div>
+          }
           <span style={{fontFamily:"DM Mono,monospace",fontSize:9,color:"rgba(80,130,255,0.3)",flexShrink:0,transition:"transform .25s",transform:collapsed?"rotate(0deg)":"rotate(180deg)"}}>▼</span>
         </div>
-        {/* Cards — smooth collapse via max-height */}
-        <div style={{
-          maxHeight:collapsed?0:340,
-          overflow:"hidden",
-          transition:"max-height 0.35s cubic-bezier(0.4,0,0.2,1)",
-        }}>
-          <div style={{padding:"0 10px 12px",display:"flex",gap:8,alignItems:"stretch"}}>
-            <SideCard label="BUY" price={spread.buy_price} currency={spread.fiat}
-              advertiser={spread.buy_advertiser} exchange={spread.buy_exchange} url={spread.buy_url}
-              accentColor="#26a69a" bg="rgba(38,166,154,0.06)"/>
-            <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:6,flexShrink:0,padding:"0 4px"}}>
-              <div style={{width:1,flex:1,background:"rgba(38,166,154,0.12)"}}/>
-              <div style={{width:32,height:32,borderRadius:"50%",background:"rgba(20,40,80,0.8)",border:"1.5px solid rgba(38,166,154,0.3)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,color:"#26a69a",flexShrink:0,boxShadow:"0 0 12px rgba(38,166,154,0.15)"}}>→</div>
-              <div style={{width:1,flex:1,background:"rgba(38,166,154,0.12)"}}/>
+        {/* Cards — smooth collapse */}
+        <div style={{maxHeight:collapsed?0:340,overflow:"hidden",transition:"max-height 0.32s cubic-bezier(0.4,0,0.2,1)"}}>
+          {spread?(
+            <div style={{padding:"0 10px 12px",display:"flex",gap:8,alignItems:"stretch"}}>
+              <SideCard label="BUY" price={spread.buy_price} currency={spread.fiat}
+                advertiser={spread.buy_advertiser} exchange={spread.buy_exchange} url={spread.buy_url}
+                accentColor="#26a69a" bg="rgba(38,166,154,0.06)" t={t}/>
+              <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:6,flexShrink:0,padding:"0 2px"}}>
+                <div style={{width:1,flex:1,background:"rgba(38,166,154,0.12)"}}/>
+                <div style={{width:28,height:28,borderRadius:"50%",background:"rgba(20,40,80,0.8)",border:"1.5px solid rgba(38,166,154,0.3)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:"#26a69a",flexShrink:0}}>→</div>
+                <div style={{width:1,flex:1,background:"rgba(38,166,154,0.12)"}}/>
+              </div>
+              <SideCard label="SELL" price={spread.sell_price} currency={spread.crypto}
+                advertiser={spread.sell_advertiser} exchange={spread.sell_exchange} url={spread.sell_url}
+                accentColor="#4a9eff" bg="rgba(74,158,255,0.06)" t={t}/>
             </div>
-            <SideCard label="SELL" price={spread.sell_price} currency={spread.crypto}
-              advertiser={spread.sell_advertiser} exchange={spread.sell_exchange} url={spread.sell_url}
-              accentColor="#4a9eff" bg="rgba(74,158,255,0.06)"/>
-          </div>
+          ):(
+            <div style={{padding:"12px 10px",display:"flex",gap:8}}>
+              {[0,1].map(i=>(
+                <div key={i} style={{flex:1,borderRadius:12,padding:"14px",background:"rgba(20,40,80,0.3)",border:"1px solid rgba(70,120,220,0.1)",minHeight:100,animation:"pulse 1.4s infinite"}}/>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     )
@@ -466,7 +482,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
         <div style={{
           maxHeight:open?900:0,
           overflow:"hidden",
-          transition:"max-height 0.38s cubic-bezier(0.4,0,0.2,1)",
+          transition:"max-height 0.28s cubic-bezier(0.4,0,0.2,1)",
         }}>
           <div className="glass-strong" style={{marginTop:8,padding:"18px 16px 10px",overflow:"visible"}}>
             <FilterRow label={tr("fiatCurrency")}>
@@ -482,13 +498,16 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
             <FilterRow label={tr("side")}>
               <div style={{display:"flex",gap:8}}>
                 {["BUY","SELL"].map(s=>(
-                  <button key={s} onClick={()=>setSide(s)} style={{
-                    flex:1,padding:"11px",borderRadius:10,border:"1.5px solid",cursor:"pointer",
-                    fontFamily:"DM Mono,monospace",fontSize:12,fontWeight:700,minHeight:44,
-                    background:side===s?(s==="BUY"?"rgba(38,166,154,0.15)":"rgba(239,83,80,0.12)"):"rgba(4,10,26,0.7)",
-                    borderColor:side===s?(s==="BUY"?"rgba(38,166,154,0.4)":"rgba(239,83,80,0.35)"):"rgba(70,120,220,0.18)",
-                    color:side===s?(s==="BUY"?"#3effc0":"#ff7878"):"rgba(120,170,255,0.4)",
-                  }}>{s}</button>
+                  <button key={s}
+                    onPointerDown={e=>{e.preventDefault();setSide(s)}}
+                    style={{
+                      flex:1,padding:"11px",borderRadius:10,border:"1.5px solid",cursor:"pointer",
+                      fontFamily:"DM Mono,monospace",fontSize:12,fontWeight:700,minHeight:44,
+                      background:side===s?(s==="BUY"?"rgba(38,166,154,0.15)":"rgba(239,83,80,0.12)"):"rgba(4,10,26,0.7)",
+                      borderColor:side===s?(s==="BUY"?"rgba(38,166,154,0.4)":"rgba(239,83,80,0.35)"):"rgba(70,120,220,0.18)",
+                      color:side===s?(s==="BUY"?"#3effc0":"#ff7878"):"rgba(120,170,255,0.4)",
+                      touchAction:"manipulation",
+                    }}>{s}</button>
                 ))}
               </div>
             </FilterRow>
@@ -723,7 +742,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
       <div style={{overflow:"hidden",background:"rgba(4,10,26,0.6)",border:"1px solid rgba(70,120,220,0.12)",borderRadius:10,padding:"7px 0",marginBottom:10,position:"relative",userSelect:"none",width:"100%",maxWidth:"100%",boxSizing:"border-box"}}>
         <div style={{position:"absolute",left:0,top:0,bottom:0,width:28,background:"linear-gradient(90deg,rgba(4,10,26,0.9),transparent)",zIndex:1,pointerEvents:"none"}}/>
         <div style={{position:"absolute",right:0,top:0,bottom:0,width:28,background:"linear-gradient(270deg,rgba(4,10,26,0.9),transparent)",zIndex:1,pointerEvents:"none"}}/>
-        <div style={{display:"inline-flex",animation:"ticker 38s linear infinite",whiteSpace:"nowrap"}}>
+        <div className="ticker-track" style={{display:"inline-flex",animation:"ticker 20s linear infinite",whiteSpace:"nowrap"}}>
           {items.map((c,i)=>{
             const up=c.chg>=0
             const col=up?"#26a69a":"#ef5350"
@@ -870,7 +889,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
         background:isBest?"rgba(8,28,55,0.85)":"rgba(8,18,50,0.75)",
         border:`1.5px solid ${isBest?"rgba(38,166,154,0.45)":"rgba(70,120,220,0.18)"}`,
         opacity:0,
-        animation:`fadeUp .3s forwards ${i*40}ms`,
+        animation:`fadeUp .2s forwards ${i*25}ms`,
       }}>
         {/* top row: price + advertiser */}
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
@@ -1464,10 +1483,14 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
           @media(max-width:400px){
             .title{font-size:22px;}
           }
+          /* Mobile performance */
+          *{-webkit-tap-highlight-color:transparent;}
+          button,a{touch-action:manipulation;}
+          .ticker-track{will-change:transform;transform:translateZ(0);}
         `}</style>
 
-        <ParticleField/>
-        <div className="bg-orb orb1"/><div className="bg-orb orb2"/><div className="bg-orb orb3"/>
+        {!isMobile&&<ParticleField/>}
+        {!isMobile&&<><div className="bg-orb orb1"/><div className="bg-orb orb2"/><div className="bg-orb orb3"/></>}
 
         <div className="wrapper">
           {/* ── Header ── */}
@@ -1508,15 +1531,18 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
           ):(<>
             {/* Mobile: BUY/SELL at very top */}
             <div className="mobile-only-block" style={{marginBottom:10}}>
-              <div style={{display:"flex",gap:0,background:"rgba(4,10,26,0.88)",border:"1.5px solid rgba(70,120,220,0.18)",borderRadius:13,overflow:"hidden",padding:4,gap:4}}>
-                {[["BUY","buy-active","rgba(38,166,154,0.18)","#3effc0"],["SELL","sell-active","rgba(239,83,80,0.16)","#ff7878"]].map(([s,cls,bg,col])=>(
-                  <button key={s} onClick={()=>setSide(s)} style={{
-                    flex:1,padding:"12px",border:"none",cursor:"pointer",borderRadius:10,
-                    fontFamily:"DM Mono,monospace",fontSize:13,fontWeight:800,letterSpacing:"0.05em",
-                    background:side===s?bg:"transparent",
-                    color:side===s?col:"rgba(120,170,255,0.35)",
-                    transition:"all .25s",minHeight:40,
-                  }}>{s==="BUY"?t("buy"):t("sell")}</button>
+              <div style={{display:"flex",background:"rgba(4,10,26,0.88)",border:"1.5px solid rgba(70,120,220,0.18)",borderRadius:13,overflow:"hidden",padding:4,gap:4}}>
+                {[["BUY","rgba(38,166,154,0.18)","#3effc0"],["SELL","rgba(239,83,80,0.16)","#ff7878"]].map(([s,bg,col])=>(
+                  <button key={s}
+                    onPointerDown={e=>{e.preventDefault();setSide(s)}}
+                    style={{
+                      flex:1,padding:"11px",border:"none",cursor:"pointer",borderRadius:10,
+                      fontFamily:"DM Mono,monospace",fontSize:13,fontWeight:800,letterSpacing:"0.05em",
+                      background:side===s?bg:"transparent",
+                      color:side===s?col:"rgba(120,170,255,0.35)",
+                      transition:"background .15s, color .15s",minHeight:40,
+                      touchAction:"manipulation",WebkitUserSelect:"none",
+                    }}>{s==="BUY"?t("buy"):t("sell")}</button>
                 ))}
               </div>
             </div>
@@ -1713,7 +1739,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
         {/* Bottom navigation — mobile only */}
         <nav className="mobile-only-flex" style={{
           position:"fixed",bottom:0,left:0,right:0,zIndex:200,
-          background:"rgba(4,10,28,0.97)",backdropFilter:"blur(24px)",WebkitBackdropFilter:"blur(24px)",
+          background:"rgba(4,10,28,0.97)",backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",
           borderTop:"1px solid rgba(70,120,220,0.2)",
           alignItems:"stretch",height:56,
           paddingBottom:"env(safe-area-inset-bottom,0px)",
@@ -1723,7 +1749,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
             {id:"calc", label:t("quickCalc")||"Calc", svg:<svg width="19" height="19" viewBox="0 0 20 20" fill="none"><rect x="3" y="2" width="14" height="16" rx="2" stroke="currentColor" strokeWidth="1.6"/><line x1="7" y1="7" x2="13" y2="7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><line x1="7" y1="11" x2="9" y2="11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><line x1="11" y1="11" x2="13" y2="11" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><line x1="7" y1="14" x2="9" y2="14" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><line x1="11" y1="14" x2="13" y2="14" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>},
             {id:"market", label:t("market"), svg:<svg width="19" height="19" viewBox="0 0 20 20" fill="none"><polyline points="2,14 7,9 11,12 18,5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>},
           ].map(tab=>(
-            <button key={tab.id} onClick={()=>setMode(tab.id)} style={{
+            <button key={tab.id} onPointerDown={e=>{e.preventDefault();setMode(tab.id)}} style={{
               flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
               gap:3,border:"none",cursor:"pointer",background:"transparent",padding:0,
               color:mode===tab.id?"#26a69a":"rgba(100,150,255,0.28)",

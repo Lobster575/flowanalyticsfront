@@ -337,14 +337,27 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
     const [loading,setLoading]=useState(true)
     const [collapsed,setCollapsed]=useState(false)
     useEffect(()=>{
-      const load=()=>{
+      let retryTimer
+      const load=async()=>{
         setLoading(true)
-        fetch("https://flowanalytics-production.up.railway.app/p2p/spread")
-          .then(r=>r.json())
-          .then(d=>{ if(d.spread) setSpread(d.spread); setLoading(false) })
-          .catch(()=>setLoading(false))
+        const ctrl=new AbortController()
+        const timeout=setTimeout(()=>ctrl.abort(),14000) // 14s hard timeout
+        try{
+          const r=await fetch("https://flowanalytics-production.up.railway.app/p2p/spread",{signal:ctrl.signal})
+          const d=await r.json()
+          clearTimeout(timeout)
+          if(d.spread){ setSpread(d.spread); setLoading(false) }
+          else{ setLoading(false) }
+        }catch(e){
+          clearTimeout(timeout)
+          setLoading(false)
+          // Retry after 8s if failed
+          retryTimer=setTimeout(load, 8000)
+        }
       }
-      load();const iv=setInterval(load,60000);return()=>clearInterval(iv)
+      load()
+      const iv=setInterval(load,60000)
+      return()=>{ clearInterval(iv); clearTimeout(retryTimer) }
     },[])
 
     const pct=spread?.spread_pct??0

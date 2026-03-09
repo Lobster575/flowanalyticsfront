@@ -313,7 +313,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
     const pct=spread.spread_pct
     const pctColor=pct>1?"#3dffa0":pct>0?"#f0b90b":"#ef5350"
     const SideCard=({label,price,currency,advertiser,exchange,url,accentColor,bg})=>(
-      <div style={{flex:1,minWidth:0,background:bg,borderRadius:12,padding:"11px 12px 11px",border:`1.5px solid ${accentColor}30`,display:"flex",flexDirection:"column",gap:8}}>
+      <div style={{flex:"1 1 140px",minWidth:0,background:bg,borderRadius:12,padding:"11px 12px 11px",border:`1.5px solid ${accentColor}30`,display:"flex",flexDirection:"column",gap:8}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
           <span style={{fontFamily:"DM Mono,monospace",fontSize:9,letterSpacing:"0.2em",textTransform:"uppercase",color:`${accentColor}cc`,fontWeight:600}}>{label}</span>
           <span style={{fontFamily:"DM Mono,monospace",fontSize:9,color:"rgba(100,140,255,0.4)",background:"rgba(80,120,255,0.08)",padding:"2px 8px",borderRadius:20,border:"1px solid rgba(80,120,255,0.12)"}}>{exchange}</span>
@@ -359,11 +359,11 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
           overflow:"hidden",
           transition:"max-height 0.35s cubic-bezier(0.4,0,0.2,1)",
         }}>
-          <div style={{padding:"0 10px 12px",display:"flex",gap:8,alignItems:"stretch"}}>
+          <div style={{padding:"0 10px 12px",display:"flex",gap:8,alignItems:"stretch",flexWrap:"wrap"}}>
             <SideCard label="BUY" price={spread.buy_price} currency={spread.fiat}
               advertiser={spread.buy_advertiser} exchange={spread.buy_exchange} url={spread.buy_url}
               accentColor="#26a69a" bg="rgba(38,166,154,0.06)"/>
-            <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:6,flexShrink:0,padding:"0 4px"}}>
+            <div className="spread-arrow" style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:6,flexShrink:0,padding:"0 4px"}}>
               <div style={{width:1,flex:1,background:"rgba(38,166,154,0.12)"}}/>
               <div style={{width:32,height:32,borderRadius:"50%",background:"rgba(20,40,80,0.8)",border:"1.5px solid rgba(38,166,154,0.3)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,color:"#26a69a",flexShrink:0,boxShadow:"0 0 12px rgba(38,166,154,0.15)"}}>→</div>
               <div style={{width:1,flex:1,background:"rgba(38,166,154,0.12)"}}/>
@@ -704,7 +704,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
     if(!coins.length)return null
     const items=[...coins,...coins]
     return(
-      <div style={{overflow:"hidden",background:"rgba(4,10,26,0.6)",border:"1px solid rgba(70,120,220,0.12)",borderRadius:10,padding:"7px 0",marginBottom:10,position:"relative",userSelect:"none"}}>
+      <div style={{overflow:"hidden",background:"rgba(4,10,26,0.6)",border:"1px solid rgba(70,120,220,0.12)",borderRadius:10,padding:"7px 0",marginBottom:10,position:"relative",userSelect:"none",width:"100%",boxSizing:"border-box"}}>
         <div style={{position:"absolute",left:0,top:0,bottom:0,width:28,background:"linear-gradient(90deg,rgba(4,10,26,0.9),transparent)",zIndex:1,pointerEvents:"none"}}/>
         <div style={{position:"absolute",right:0,top:0,bottom:0,width:28,background:"linear-gradient(270deg,rgba(4,10,26,0.9),transparent)",zIndex:1,pointerEvents:"none"}}/>
         <div style={{display:"inline-flex",animation:"ticker 38s linear infinite",whiteSpace:"nowrap"}}>
@@ -855,6 +855,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
         border:`1.5px solid ${isBest?"rgba(38,166,154,0.45)":"rgba(70,120,220,0.18)"}`,
         opacity:0,
         animation:`fadeUp .3s forwards ${i*40}ms`,
+        width:"100%",boxSizing:"border-box",overflow:"hidden",
       }}>
         {/* top row: price + advertiser */}
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
@@ -1345,7 +1346,7 @@ canvas {
           .orb1{width:600px;height:600px;background:radial-gradient(circle,rgba(15,55,155,0.2) 0%,transparent 70%);top:-200px;left:-120px;}
           .orb2{width:500px;height:500px;background:radial-gradient(circle,rgba(0,110,210,0.11) 0%,transparent 70%);bottom:-120px;right:-90px;}
           .orb3{width:320px;height:320px;background:radial-gradient(circle,rgba(38,166,154,0.07) 0%,transparent 70%);top:38%;left:42%;}
-          .wrapper{position:relative;z-index:1;min-height:100vh;padding:34px 20px 80px;max-width:1020px;width:100%;min-width:0;}
+          .wrapper{position:relative;z-index:1;min-height:100vh;padding:34px 20px 80px;max-width:1020px;width:100%;min-width:0;overflow-x:hidden;}
           .glass-strong{background:rgba(8,16,42,0.55);backdrop-filter:blur(32px) saturate(1.4);-webkit-backdrop-filter:blur(32px) saturate(1.4);border:2px solid rgba(90,140,255,0.18);border-radius:20px;box-shadow:0 0 0 1px rgba(255,255,255,0.04) inset,0 24px 48px rgba(0,0,0,0.35);transform:translateZ(0);}
           .header{margin-bottom:26px;}
           .logo{font-size:11px;font-weight:600;letter-spacing:.32em;text-transform:uppercase;color:rgba(100,160,255,0.45);margin-bottom:10px;}
@@ -1421,13 +1422,14 @@ canvas {
           .mobile-only-flex{display:none;}
           @media(max-width:640px){
             .wrapper{
-              max-width:1020px;
+              max-width:100vw;
               width:100%;
               min-width:0;
               overflow-x:hidden;
+              padding:16px 12px 72px;
             }
             .bg-orb{display:none;}
-            .glass-strong{border-radius:14px;}
+            .glass-strong{border-radius:14px;max-width:100%;box-sizing:border-box;}
             .controls{padding:10px 12px;gap:8px;}
             .ctrl-row{gap:5px;flex-wrap:wrap;}
             .sel-wrap select{font-size:11px;padding:6px 18px 6px 8px;}
@@ -1449,6 +1451,7 @@ canvas {
           }
           @media(max-width:400px){
             .title{font-size:22px;}
+            .spread-arrow{display:none !important;}
           }
         `}</style>
 
@@ -1665,7 +1668,7 @@ canvas {
                 </div>}
 
                 {/* Mobile cards — only rendered on mobile */}
-                {isMobile&&<div>
+                {isMobile&&<div style={{width:"100%",overflow:"hidden"}}>
                   {displayOffers.map((o,i)=>(
                     <OfferCard key={`${stripEmoji(o.advertiser)}-${i}`} o={o} i={i}
                       isBest={o.price===bestPrice} changed={changedRows[o.advertiser]} fiat={fiat} t={t}/>

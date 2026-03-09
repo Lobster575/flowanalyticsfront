@@ -606,7 +606,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
     ]
 
     return(
-      <div style={{width:"100%"}}>
+      <div style={{width:"100%",maxWidth:"100%",boxSizing:"border-box",overflow:"hidden"}}>
         {/* Search bar */}
         <div style={{position:"relative",marginBottom:12}}>
           <span style={{position:"absolute",left:13,top:"50%",transform:"translateY(-50%)",fontSize:16,color:"rgba(80,130,255,0.35)",pointerEvents:"none"}}>🔍</span>
@@ -635,7 +635,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
         {/* Asset list */}
         <div className="glass-strong" style={{overflow:"hidden"}}>
           {/* Header */}
-          <div style={{display:"grid",gridTemplateColumns:"32px 1fr auto 80px",alignItems:"center",padding:"9px 16px",borderBottom:"1px solid rgba(50,90,180,0.08)"}}>
+          <div style={{display:"grid",gridTemplateColumns:"32px 1fr 90px 72px",alignItems:"center",padding:"9px 16px",borderBottom:"1px solid rgba(50,90,180,0.08)"}}>
             <div/>
             <span style={{fontFamily:"DM Mono,monospace",fontSize:8,letterSpacing:"0.14em",textTransform:"uppercase",color:"rgba(80,130,255,0.35)"}}>Symbol</span>
             <span style={{fontFamily:"DM Mono,monospace",fontSize:8,letterSpacing:"0.14em",textTransform:"uppercase",color:"rgba(80,130,255,0.35)",textAlign:"right",paddingRight:16}}>Price</span>
@@ -656,7 +656,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
             const isFav=favs.includes(item.symbol)
             return(
               <div key={i} style={{
-                display:"grid",gridTemplateColumns:"32px 1fr auto 80px",
+                display:"grid",gridTemplateColumns:"32px 1fr 90px 72px",
                 alignItems:"center",padding:"14px 16px",
                 borderBottom:"1px solid rgba(50,90,180,0.05)",
                 background:"transparent",transition:"background .15s",minHeight:64,
@@ -679,7 +679,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
                   </div>
                 </div>
                 {/* Price */}
-                <div style={{fontFamily:"DM Mono,monospace",fontSize:13,fontWeight:600,color:"#e8f4ff",textAlign:"right",paddingRight:12}}>
+                <div style={{fontFamily:"DM Mono,monospace",fontSize:12,fontWeight:600,color:"#e8f4ff",textAlign:"right",paddingRight:4,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
                   ${item.price<1?item.price.toFixed(5):item.price.toLocaleString(undefined,{maximumFractionDigits:2})}
                 </div>
                 {/* Change badge */}
@@ -720,7 +720,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
     if(!coins.length)return null
     const items=[...coins,...coins]
     return(
-      <div style={{overflow:"hidden",background:"rgba(4,10,26,0.6)",border:"1px solid rgba(70,120,220,0.12)",borderRadius:10,padding:"7px 0",marginBottom:10,position:"relative",userSelect:"none"}}>
+      <div style={{overflow:"hidden",background:"rgba(4,10,26,0.6)",border:"1px solid rgba(70,120,220,0.12)",borderRadius:10,padding:"7px 0",marginBottom:10,position:"relative",userSelect:"none",width:"100%",maxWidth:"100%",boxSizing:"border-box"}}>
         <div style={{position:"absolute",left:0,top:0,bottom:0,width:28,background:"linear-gradient(90deg,rgba(4,10,26,0.9),transparent)",zIndex:1,pointerEvents:"none"}}/>
         <div style={{position:"absolute",right:0,top:0,bottom:0,width:28,background:"linear-gradient(270deg,rgba(4,10,26,0.9),transparent)",zIndex:1,pointerEvents:"none"}}/>
         <div style={{display:"inline-flex",animation:"ticker 38s linear infinite",whiteSpace:"nowrap"}}>
@@ -1346,16 +1346,10 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
         <style>{`
           @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap');
           *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-                  html, body {
-  max-width: 100vw;
-  overflow-x: hidden;
-}
-
-canvas {
-  max-width: 100% !important;
-  display: block;
-}
-          body{background:#040a18;min-height:100vh;font-family:'Syne',sans-serif;display:flex;justify-content:center;}
+          @media(max-width:640px){*{max-width:100%;}img,canvas,svg,video{max-width:100% !important;}}
+          html,body{max-width:100%;width:100%;overflow-x:hidden;}
+          canvas{max-width:100% !important;display:block;}
+          body{background:#040a18;min-height:100vh;font-family:'Syne',sans-serif;display:flex;justify-content:center;width:100%;}
           body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
             background-image:linear-gradient(rgba(50,100,220,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(50,100,220,0.04) 1px,transparent 1px);
             background-size:46px 46px;}
@@ -1363,7 +1357,7 @@ canvas {
           .orb1{width:600px;height:600px;background:radial-gradient(circle,rgba(15,55,155,0.2) 0%,transparent 70%);top:-200px;left:-120px;}
           .orb2{width:500px;height:500px;background:radial-gradient(circle,rgba(0,110,210,0.11) 0%,transparent 70%);bottom:-120px;right:-90px;}
           .orb3{width:320px;height:320px;background:radial-gradient(circle,rgba(38,166,154,0.07) 0%,transparent 70%);top:38%;left:42%;}
-          .wrapper{position:relative;z-index:1;min-height:100vh;padding:34px 20px 80px;max-width:1020px;width:100%;min-width:0;}
+          .wrapper{position:relative;z-index:1;min-height:100vh;padding:34px 20px 80px;max-width:min(1020px,100vw);width:100%;min-width:0;overflow-x:hidden;box-sizing:border-box;}
           .glass-strong{background:rgba(8,16,42,0.55);backdrop-filter:blur(32px) saturate(1.4);-webkit-backdrop-filter:blur(32px) saturate(1.4);border:2px solid rgba(90,140,255,0.18);border-radius:20px;box-shadow:0 0 0 1px rgba(255,255,255,0.04) inset,0 24px 48px rgba(0,0,0,0.35);transform:translateZ(0);}
           .header{margin-bottom:26px;}
           .logo{font-size:11px;font-weight:600;letter-spacing:.32em;text-transform:uppercase;color:rgba(100,160,255,0.45);margin-bottom:10px;}
@@ -1439,13 +1433,15 @@ canvas {
           .mobile-only-flex{display:none;}
           @media(max-width:640px){
             .wrapper{
-              max-width:1020px;
+              max-width:100%;
               width:100%;
               min-width:0;
               overflow-x:hidden;
+              padding:16px 12px 72px;
+              box-sizing:border-box;
             }
             .bg-orb{display:none;}
-            .glass-strong{border-radius:14px;}
+            .glass-strong{border-radius:14px;max-width:100%;box-sizing:border-box;overflow:hidden;}
             .controls{padding:10px 12px;gap:8px;}
             .ctrl-row{gap:5px;flex-wrap:wrap;}
             .sel-wrap select{font-size:11px;padding:6px 18px 6px 8px;}

@@ -1209,17 +1209,17 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
             lineHeight:1.05,letterSpacing:"-0.02em",
             color:"#fff",margin:0,
           }}>
-            Вова<span style={{
+            Meta<span style={{
               background:"linear-gradient(135deg,#4a9eff,#88c4ff,#e0f0ff)",
               WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
-            }}> пидорас</span>
+            }}>flow</span>
           </h1>
           <div style={{
             fontFamily:"Syne,sans-serif",fontWeight:800,
             fontSize:"clamp(36px,8vw,64px)",
             lineHeight:1.05,letterSpacing:"-0.02em",
             color:"#fff",
-          }}>ебанный</div>
+          }}>Analytics</div>
         </div>
 
         {/* Tagline */}
